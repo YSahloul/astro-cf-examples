@@ -1,0 +1,30 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  
+  "mcp": {
+    "wheel-fitment": {
+      "type": "remote",
+      "url": "https://wheel-fitment-mcp.agenticflows.workers.dev/mcp",
+      "enabled": true
+    },
+    "vibesdk": {
+      "type": "remote",
+      "url": "https://vibesdk-mcp-server.agenticflows.workers.dev/mcp",
+      "enabled": true
+    },
+    "scraper": {
+      "type": "remote",
+      "url": "https://brightdata-mcp-server-2.agenticflows.workers.dev/mcp",
+      "enabled": true
+    },
+    "ref-tools-docs": {
+      "type": "remote",
+      "url": "https://api.ref.tools/mcp",
+      "enabled": true,
+        "headers": {
+          "x-ref-api-key": "ref-6a7a306b7270150f93af"
+        }
+      }
+    }
+  
+  }

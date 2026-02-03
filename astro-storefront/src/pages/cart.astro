@@ -1,0 +1,183 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { createPayload, type Cart, type Product, type Variant } from '../lib/payload';
+import { actions } from 'astro:actions';
+
+const payload = createPayload(Astro.locals.runtime?.env?.PAYLOAD_CMS);
+
+const cartId = Astro.cookies.get('cart')?.value;
+let cart: Cart | null = null;
+let error = null;
+
+if (cartId) {
+  try {
+    cart = await payload.findByID({
+      collection: 'carts',
+      id: cartId,
+      depth: 2,
+    });
+  } catch (e) {
+    error = e instanceof Error ? e.message : 'Failed to load cart';
+  }
+}
+
+// Calculate totals
+let subtotal = 0;
+if (cart?.items) {
+  for (const item of cart.items) {
+    const product = item.product as Product;
+    const variant = item.variant as Variant | undefined;
+    
+    const price = variant?.priceInUSDEnabled && variant?.priceInUSD
+      ? variant.priceInUSD
+      : product?.priceInUSDEnabled && product?.priceInUSD
+        ? product.priceInUSD
+        : 0;
+    
+    subtotal += price * item.quantity;
+  }
+}
+
+// Handle action results
+const removeResult = Astro.getActionResult(actions.removeFromCart);
+const updateResult = Astro.getActionResult(actions.updateQuantity);
+---
+
+<Layout title="Cart - Astro Store">
+  <h1 class="text-3xl font-bold text-gray-900 mb-8">Your Cart</h1>
+
+  {error && (
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+      <p class="text-red-800">Unable to load cart.</p>
+      <p class="text-red-600 text-sm mt-1">{error}</p>
+    </div>
+  )}
+
+  {(!cart || !cart.items || cart.items.length === 0) && !error && (
+    <div class="text-center py-12 bg-gray-100 rounded-lg">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+      <p class="text-gray-600 text-lg mb-4">Your cart is empty</p>
+      <a 
+        href="/products" 
+        class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition"
+      >
+        Continue Shopping
+      </a>
+    </div>
+  )}
+
+  {cart && cart.items && cart.items.length > 0 && (
+    <div class="grid lg:grid-cols-3 gap-8">
+      {/* Cart Items */}
+      <div class="lg:col-span-2 space-y-4">
+        {cart.items.map((item) => {
+          const product = item.product as Product;
+          const variant = item.variant as Variant | undefined;
+          const price = variant?.priceInUSDEnabled && variant?.priceInUSD
+            ? variant.priceInUSD
+            : product?.priceInUSDEnabled && product?.priceInUSD
+              ? product.priceInUSD
+              : 0;
+          
+          return (
+            <div class="bg-white rounded-lg shadow-sm p-4 flex gap-4">
+              {/* Product Image */}
+              <div class="w-24 h-24 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center">
+                <span class="text-gray-400 text-xs">No image</span>
+              </div>
+
+              {/* Product Info */}
+              <div class="flex-grow">
+                <h3 class="font-medium text-gray-900">
+                  {product?.title || `Product #${typeof item.product === 'number' ? item.product : product?.id}`}
+                </h3>
+                {variant && (
+                  <p class="text-sm text-gray-500">
+                    {variant.title || `Variant #${typeof item.variant === 'number' ? item.variant : variant.id}`}
+                  </p>
+                )}
+                <p class="text-lg font-bold text-gray-900 mt-1">
+                  ${price.toFixed(2)}
+                </p>
+              </div>
+
+              {/* Quantity & Actions */}
+              <div class="flex flex-col items-end justify-between">
+                <form method="POST" action={actions.removeFromCart}>
+                  <input type="hidden" name="itemId" value={item.id} />
+                  <button 
+                    type="submit"
+                    class="text-red-600 hover:text-red-700 text-sm"
+                  >
+                    Remove
+                  </button>
+                </form>
+
+                <form method="POST" action={actions.updateQuantity} class="flex items-center gap-2">
+                  <input type="hidden" name="itemId" value={item.id} />
+                  <button 
+                    type="submit"
+                    name="quantity"
+                    value={Math.max(0, item.quantity - 1)}
+                    class="w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50"
+                  >
+                    -
+                  </button>
+                  <span class="w-8 text-center">{item.quantity}</span>
+                  <button 
+                    type="submit"
+                    name="quantity"
+                    value={item.quantity + 1}
+                    class="w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50"
+                  >
+                    +
+                  </button>
+                </form>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Order Summary */}
+      <div class="lg:col-span-1">
+        <div class="bg-white rounded-lg shadow-sm p-6 sticky top-24">
+          <h2 class="text-lg font-bold text-gray-900 mb-4">Order Summary</h2>
+          
+          <div class="space-y-2 mb-4">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Subtotal</span>
+              <span class="font-medium">${subtotal.toFixed(2)}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Shipping</span>
+              <span class="text-gray-500">Calculated at checkout</span>
+            </div>
+          </div>
+
+          <div class="border-t pt-4 mb-6">
+            <div class="flex justify-between text-lg font-bold">
+              <span>Total</span>
+              <span>${subtotal.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <button 
+            class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition"
+          >
+            Proceed to Checkout
+          </button>
+
+          <a 
+            href="/products" 
+            class="block text-center text-blue-600 hover:underline mt-4"
+          >
+            Continue Shopping
+          </a>
+        </div>
+      </div>
+    </div>
+  )}
+</Layout>

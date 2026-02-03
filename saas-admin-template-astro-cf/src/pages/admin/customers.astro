@@ -1,0 +1,24 @@
+---
+import { env } from "cloudflare:workers";
+import Layout from '@/layouts/Layout.astro';
+import { CustomerService } from "@/lib/services/customer";
+import { CustomersTable } from '@/components/admin/customers-table';
+import { CreateCustomerButton } from '@/components/admin/create-customer';
+
+const customerService = new CustomerService(env.DB);
+const customers = await customerService.getAll();
+---
+
+<Layout title="Customers">
+  {customers.length ? (
+    <CustomersTable data={customers} />
+  ) : (
+    <p class="font-medium text-muted-foreground">
+      No customers yet. Try creating one using the API or by selecting "Create New Customer" above.
+    </p>
+  )}
+
+  <div slot="actions">
+    <CreateCustomerButton client:only="react" />
+  </div>
+</Layout>

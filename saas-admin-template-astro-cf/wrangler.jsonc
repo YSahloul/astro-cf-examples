@@ -1,0 +1,37 @@
+{
+  "name": "saas-admin-template",
+  "compatibility_date": "2025-10-08",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "upload_source_maps": true,
+  "vars": {
+    "EXAMPLE_VALUE": "example_value"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "admin-db",
+      "database_id": "023656c4-44de-48c4-9e80-6f47faa800c6"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "SESSION",
+      "id": "a2a43e8f4b4445babbe887b96f26beef"
+    }
+  ]
+  // Note: Workflows temporarily disabled during Astro 6 beta migration
+  // "workflows": [
+  //   {
+  //     "name": "saas-admin-template-customer-workflow",
+  //     "binding": "CUSTOMER_WORKFLOW",
+  //     "class_name": "CustomerWorkflow"
+  //   }
+  // ]
+}
