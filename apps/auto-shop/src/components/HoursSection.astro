@@ -1,0 +1,93 @@
+---
+interface Hour {
+  day: string;
+  open: string | null;
+  close: string | null;
+  closed: boolean | null;
+}
+
+interface Props {
+  hours: Hour[];
+  profile: {
+    address?: string | null;
+    city?: string | null;
+    state?: string | null;
+    zip?: string | null;
+    financingUrl?: string | null;
+  };
+}
+
+const { hours, profile } = Astro.props;
+---
+
+<section id="hours" class="grid lg:grid-cols-2">
+  <div class="bg-base-100 p-8 md:p-12">
+    <h2 class="text-3xl font-black uppercase mb-8" style="font-family: 'Oswald', sans-serif;">Shop Hours</h2>
+    <div class="overflow-x-auto">
+      <table class="table">
+        <tbody>
+          {hours.map((h) => (
+            <tr class="hover">
+              <td class="font-bold uppercase">{h.day}</td>
+              <td class={`text-right font-black ${h.closed ? 'text-error' : ''}`}>
+                {h.closed ? 'CLOSED' : `${h.open} - ${h.close}`}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    {profile.address && (
+      <div class="mt-8 pt-6 border-t-2 border-base-300">
+        <p class="font-black uppercase text-sm opacity-50 mb-2">Location</p>
+        <p class="text-lg font-bold">{profile.address}</p>
+        <p class="opacity-70">{profile.city}, {profile.state} {profile.zip}</p>
+        <a href={`https://maps.google.com/?q=${encodeURIComponent(`${profile.address}, ${profile.city}, ${profile.state} ${profile.zip}`)}`} target="_blank" class="btn btn-neutral mt-4">
+          Get Directions
+        </a>
+      </div>
+    )}
+  </div>
+  
+  <div class="bg-primary text-primary-content p-8 md:p-12 flex flex-col justify-center">
+    {profile.financingUrl ? (
+      <>
+        <h2 class="text-3xl md:text-4xl font-black uppercase mb-4" style="font-family: 'Oswald', sans-serif;">Easy Financing</h2>
+        <p class="text-xl opacity-90 mb-8">Get approved in minutes. No credit check. Flexible payments.</p>
+        <a href={profile.financingUrl} target="_blank" class="btn btn-secondary w-fit text-lg" style="font-family: 'Oswald', sans-serif;">
+          Apply Now
+        </a>
+      </>
+    ) : (
+      <>
+        <h2 class="text-3xl md:text-4xl font-black uppercase mb-6" style="font-family: 'Oswald', sans-serif;">Why Choose Us</h2>
+        <ul class="space-y-4 text-lg">
+          <li class="flex items-center gap-3">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+            Licensed & Insured
+          </li>
+          <li class="flex items-center gap-3">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+            Same Day Service
+          </li>
+          <li class="flex items-center gap-3">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+            Expert Installation
+          </li>
+          <li class="flex items-center gap-3">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+            Top Brand Selection
+          </li>
+        </ul>
+      </>
+    )}
+  </div>
+</section>

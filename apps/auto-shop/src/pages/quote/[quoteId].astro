@@ -1,0 +1,373 @@
+---
+// src/pages/quote/[quoteId].astro
+import Layout from '@/layouts/Layout.astro';
+import { actions } from 'astro:actions';
+
+const { quoteId } = Astro.params;
+
+if (!quoteId) {
+  return Astro.redirect('/quote');
+}
+
+let quote = null;
+let error = null;
+
+try {
+  const result = await actions.getQuote({ quoteId });
+  if (result.error) {
+    error = result.error.message;
+  } else {
+    quote = result.data;
+  }
+} catch (e) {
+  error = 'Failed to load quote';
+}
+---
+
+<Layout title={quote ? `Quote ${quote.quote_id}` : 'Quote Not Found'}>
+  <main class="min-h-screen bg-gray-100 py-8">
+    <div class="container mx-auto px-4 max-w-3xl">
+      {error ? (
+        <!-- Error State -->
+        <div class="bg-white rounded-xl shadow-lg p-8 text-center">
+          <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">Quote Not Found</h1>
+          <p class="text-gray-600 mb-6">{error}</p>
+          <a 
+            href="/quote" 
+            class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+          >
+            Generate New Quote
+          </a>
+        </div>
+      ) : quote && (
+        <!-- Quote Details -->
+        <div class="space-y-6">
+          <!-- Header -->
+          <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <p class="text-sm text-gray-500">Quote ID</p>
+                <h1 class="text-2xl font-bold font-mono text-gray-900">{quote.quote_id}</h1>
+                <p class="text-sm text-gray-500 mt-1">
+                  Created {new Date(quote.created_at).toLocaleDateString()}
+                  {quote.expires_at && (
+                    <span> &bull; Expires {new Date(quote.expires_at).toLocaleDateString()}</span>
+                  )}
+                </p>
+              </div>
+              <div class="flex gap-3">
+                <button
+                  onclick="window.print()"
+                  class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  Print
+                </button>
+                <button
+                  onclick={`navigator.share ? navigator.share({ title: 'Fitment Quote', url: window.location.href }) : navigator.clipboard.writeText(window.location.href).then(() => alert('Link copied!'))`}
+                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                  Share
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vehicle Info -->
+          <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Vehicle
+            </h2>
+            <div class="text-xl font-bold text-gray-900">
+              {quote.vehicle.year} {quote.vehicle.make} {quote.vehicle.model}
+              {quote.vehicle.trim && <span class="font-normal text-gray-600"> {quote.vehicle.trim}</span>}
+            </div>
+            {quote.vehicle.drive && (
+              <p class="text-gray-500 mt-1">{quote.vehicle.drive}</p>
+            )}
+          </div>
+
+          <!-- Setup Details -->
+          <div class="grid md:grid-cols-3 gap-4">
+            <!-- Wheels -->
+            {quote.wheel && (
+              <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">Wheels</h3>
+                {quote.wheel.image_url && (
+                  <img 
+                    src={quote.wheel.image_url} 
+                    alt="Wheel" 
+                    class="w-full h-32 object-contain mb-3"
+                  />
+                )}
+                <div class="space-y-1 text-sm">
+                  {quote.wheel.brand && (
+                    <p><span class="text-gray-500">Brand:</span> <span class="font-medium">{quote.wheel.brand}</span></p>
+                  )}
+                  {quote.wheel.model && (
+                    <p><span class="text-gray-500">Model:</span> <span class="font-medium">{quote.wheel.model}</span></p>
+                  )}
+                  {quote.wheel.size && (
+                    <p><span class="text-gray-500">Size:</span> <span class="font-medium">{quote.wheel.size}</span></p>
+                  )}
+                  {quote.wheel.offset !== undefined && (
+                    <p><span class="text-gray-500">Offset:</span> <span class="font-medium">{quote.wheel.offset}mm</span></p>
+                  )}
+                  {quote.wheel.finish && (
+                    <p><span class="text-gray-500">Finish:</span> <span class="font-medium">{quote.wheel.finish}</span></p>
+                  )}
+                </div>
+                {quote.wheel.price && (
+                  <p class="mt-3 text-green-600 font-semibold">
+                    ${quote.wheel.price.toFixed(2)} x {quote.wheel.quantity || 4}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <!-- Tires -->
+            {quote.tire && (
+              <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">Tires</h3>
+                {quote.tire.image_url && (
+                  <img 
+                    src={quote.tire.image_url} 
+                    alt="Tire" 
+                    class="w-full h-32 object-contain mb-3"
+                  />
+                )}
+                <div class="space-y-1 text-sm">
+                  {quote.tire.brand && (
+                    <p><span class="text-gray-500">Brand:</span> <span class="font-medium">{quote.tire.brand}</span></p>
+                  )}
+                  {quote.tire.model && (
+                    <p><span class="text-gray-500">Model:</span> <span class="font-medium">{quote.tire.model}</span></p>
+                  )}
+                  {quote.tire.size && (
+                    <p><span class="text-gray-500">Size:</span> <span class="font-medium">{quote.tire.size}</span></p>
+                  )}
+                </div>
+                {quote.tire.price && (
+                  <p class="mt-3 text-green-600 font-semibold">
+                    ${quote.tire.price.toFixed(2)} x {quote.tire.quantity || 4}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <!-- Suspension -->
+            {quote.suspension && (
+              <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">Suspension</h3>
+                {quote.suspension.image_url && (
+                  <img 
+                    src={quote.suspension.image_url} 
+                    alt="Suspension" 
+                    class="w-full h-32 object-contain mb-3"
+                  />
+                )}
+                <div class="space-y-1 text-sm">
+                  {quote.suspension.brand && (
+                    <p><span class="text-gray-500">Brand:</span> <span class="font-medium">{quote.suspension.brand}</span></p>
+                  )}
+                  {quote.suspension.model && (
+                    <p><span class="text-gray-500">Model:</span> <span class="font-medium">{quote.suspension.model}</span></p>
+                  )}
+                  {quote.suspension.lift && (
+                    <p><span class="text-gray-500">Lift:</span> <span class="font-medium">{quote.suspension.lift}</span></p>
+                  )}
+                </div>
+                {quote.suspension.price && (
+                  <p class="mt-3 text-green-600 font-semibold">
+                    ${quote.suspension.price.toFixed(2)}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          <!-- Fitment Verification -->
+          {(quote.rubbing_status || quote.trimming_status || quote.evidence_build_count) && (
+            <div class="bg-white rounded-xl shadow-lg p-6">
+              <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Fitment Verification
+              </h2>
+              <div class="grid md:grid-cols-3 gap-4">
+                {quote.evidence_build_count && (
+                  <div class="bg-green-50 rounded-lg p-4 text-center">
+                    <p class="text-2xl font-bold text-green-700">{quote.evidence_build_count}</p>
+                    <p class="text-sm text-green-600">Verified Builds</p>
+                  </div>
+                )}
+                {quote.rubbing_status && (
+                  <div class="bg-blue-50 rounded-lg p-4 text-center">
+                    <p class="text-sm font-medium text-blue-700">{quote.rubbing_status}</p>
+                    <p class="text-xs text-blue-600 mt-1">Rubbing Status</p>
+                  </div>
+                )}
+                {quote.trimming_status && (
+                  <div class="bg-purple-50 rounded-lg p-4 text-center">
+                    <p class="text-sm font-medium text-purple-700">{quote.trimming_status}</p>
+                    <p class="text-xs text-purple-600 mt-1">Trimming Required</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <!-- Sample Builds -->
+          {quote.sample_build_urls && quote.sample_build_urls.length > 0 && (
+            <div class="bg-white rounded-xl shadow-lg p-6">
+              <h2 class="text-lg font-semibold text-gray-900 mb-4">Example Builds</h2>
+              <div class="space-y-2">
+                {quote.sample_build_urls.map((url: string, index: number) => (
+                  <a 
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="block px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100 text-blue-600 hover:text-blue-700 text-sm truncate"
+                  >
+                    Build #{index + 1}: {url}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <!-- QR Code & Pricing -->
+          <div class="grid md:grid-cols-2 gap-6">
+            <!-- QR Code -->
+            {quote.qr_code_url && (
+              <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Share This Quote</h2>
+                <img 
+                  src={quote.qr_code_url} 
+                  alt="Quote QR Code" 
+                  class="w-48 h-48 mx-auto border border-gray-200 rounded-lg"
+                />
+                <p class="text-sm text-gray-500 mt-3">Scan to view on mobile</p>
+              </div>
+            )}
+
+            <!-- Pricing Summary -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+              <h2 class="text-lg font-semibold text-gray-900 mb-4">Price Estimate</h2>
+              <div class="space-y-3">
+                {quote.wheel?.price && (
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-600">Wheels ({quote.wheel.quantity || 4}x)</span>
+                    <span class="font-medium">${((quote.wheel.price || 0) * (quote.wheel.quantity || 4)).toFixed(2)}</span>
+                  </div>
+                )}
+                {quote.tire?.price && (
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-600">Tires ({quote.tire.quantity || 4}x)</span>
+                    <span class="font-medium">${((quote.tire.price || 0) * (quote.tire.quantity || 4)).toFixed(2)}</span>
+                  </div>
+                )}
+                {quote.suspension?.price && (
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-600">Suspension Kit</span>
+                    <span class="font-medium">${quote.suspension.price.toFixed(2)}</span>
+                  </div>
+                )}
+                {quote.estimated_install && (
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-600">Est. Installation</span>
+                    <span class="font-medium">${quote.estimated_install.toFixed(2)}</span>
+                  </div>
+                )}
+                <hr class="my-2" />
+                <div class="flex justify-between text-lg font-bold">
+                  <span>Total</span>
+                  <span class="text-green-600">
+                    {quote.total_price 
+                      ? `$${quote.total_price.toFixed(2)}`
+                      : 'Contact for pricing'
+                    }
+                  </span>
+                </div>
+              </div>
+              <p class="text-xs text-gray-400 mt-4">
+                * Prices are estimates and may vary. Contact us for final pricing.
+              </p>
+            </div>
+          </div>
+
+          <!-- Customer Info (if available) -->
+          {quote.customer?.name && (
+            <div class="bg-white rounded-xl shadow-lg p-6">
+              <h2 class="text-lg font-semibold text-gray-900 mb-4">Customer Information</h2>
+              <div class="grid md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <p class="text-gray-500">Name</p>
+                  <p class="font-medium">{quote.customer.name}</p>
+                </div>
+                {quote.customer.email && (
+                  <div>
+                    <p class="text-gray-500">Email</p>
+                    <p class="font-medium">{quote.customer.email}</p>
+                  </div>
+                )}
+                {quote.customer.phone && (
+                  <div>
+                    <p class="text-gray-500">Phone</p>
+                    <p class="font-medium">{quote.customer.phone}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <!-- CTA -->
+          <div class="bg-blue-600 rounded-xl shadow-lg p-6 text-center text-white">
+            <h2 class="text-xl font-bold mb-2">Ready to Get Started?</h2>
+            <p class="mb-4 opacity-90">Contact us to finalize your order and schedule installation.</p>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+              <a 
+                href="tel:+1234567890"
+                class="px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100"
+              >
+                Call Us
+              </a>
+              <a 
+                href="/quote"
+                class="px-6 py-3 border-2 border-white text-white rounded-lg font-semibold hover:bg-blue-700"
+              >
+                Generate New Quote
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  </main>
+</Layout>
+
+<style>
+  @media print {
+    button, .no-print {
+      display: none !important;
+    }
+    .shadow-lg {
+      box-shadow: none !important;
+      border: 1px solid #e5e7eb;
+    }
+  }
+</style>

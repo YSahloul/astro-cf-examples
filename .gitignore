@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+.astro/
+.turbo/
+
+# Environment
+.env
+.env.*
+!.env.example
+.dev.vars
+!.dev.vars.example
+
+# Wrangler
+.wrangler/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+
+# TypeScript
+*.tsbuildinfo
+
+# Lock files in apps (use root pnpm-lock.yaml)
+apps/*/package-lock.json
+apps/*/pnpm-lock.yaml
+apps/*/yarn.lock

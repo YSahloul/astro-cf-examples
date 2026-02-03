@@ -1,0 +1,71 @@
+---
+import { env } from "cloudflare:workers";
+import { asc, desc } from "drizzle-orm";
+import Layout from "@/layouts/Layout.astro";
+import Navbar from "@/components/Navbar.astro";
+import HeroSection from "@/components/HeroSection.astro";
+import BrandMarquee from "@/components/BrandMarquee.astro";
+import GallerySection from "@/components/GallerySection.astro";
+import HoursSection from "@/components/HoursSection.astro";
+import TestimonialsSection from "@/components/TestimonialsSection.astro";
+import CtaSection from "@/components/CtaSection.astro";
+import Footer from "@/components/Footer.astro";
+import FitmentRecommendations from "@/components/FitmentRecommendations";
+import { FitmentQuiz } from "@/components/FitmentQuiz";
+import { AppointmentScheduler } from "@/components/AppointmentScheduler";
+import { getDb, profile as profileTable, services as servicesTable, hours as hoursTable, testimonials as testimonialsTable, gallery as galleryTable } from "@/db";
+
+const db = getDb(env.DB);
+
+const [profileResult, servicesResult, hoursResult, testimonialsResult, galleryResult] = await Promise.all([
+  db.select().from(profileTable).limit(1),
+  db.select().from(servicesTable).orderBy(desc(servicesTable.featured), asc(servicesTable.sortOrder)),
+  db.select().from(hoursTable),
+  db.select().from(testimonialsTable).orderBy(desc(testimonialsTable.date)),
+  db.select().from(galleryTable).orderBy(asc(galleryTable.sortOrder)),
+]);
+
+const profile = profileResult[0] || { name: "Auto Shop" };
+const services = servicesResult;
+const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const hours = hoursResult.sort((a, b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day));
+const testimonials = testimonialsResult;
+const gallery = galleryResult;
+---
+
+<Layout title={profile.name}>
+  <Navbar name={profile.name} phone={profile.phone} />
+
+  <HeroSection profile={profile} />
+  
+  <FitmentRecommendations client:load />
+  
+  <FitmentQuiz client:load isOpen={false} onClose={() => {}} />
+
+  <BrandMarquee />
+
+  <section id="services" class="bg-base-200 py-16 md:py-24">
+    <div class="max-w-5xl mx-auto px-4">
+      <AppointmentScheduler client:load services={services.map((s: any) => ({ id: s.id, name: s.name }))} />
+    </div>
+  </section>
+
+  <GallerySection gallery={gallery} instagram={profile.instagram} />
+
+  <HoursSection hours={hours} profile={profile} />
+
+  <TestimonialsSection testimonials={testimonials} />
+
+  <CtaSection phone={profile.phone} />
+
+  <Footer 
+    name={profile.name} 
+    phone={profile.phone}
+    address={profile.address}
+    city={profile.city}
+    state={profile.state}
+    zip={profile.zip}
+    instagram={profile.instagram}
+    facebook={profile.facebook}
+  />
+</Layout>

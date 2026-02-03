@@ -1,0 +1,46 @@
+{
+  "name": "auto-shop-astro",
+  "main": "./dist/_worker.js/index.js",
+  "compatibility_date": "2025-01-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "auto-shop-db",
+      "database_id": "3b5894d9-949f-4405-94c6-ca60cd0637a6",
+      "migrations_dir": "./drizzle"
+    },
+    {
+      "binding": "FITMENT_DB",
+      "database_name": "fitment-db",
+      "database_id": "2f25bd87-ff1d-4dda-858a-3b6d709e728e"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "SESSION",
+      "id": "a2a43e8f4b4445babbe887b96f26beef"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "FITMENT_AGENT",
+        "class_name": "FitmentAgent"
+      }
+    ]
+  },
+  "services": [
+    {
+      "binding": "PAYLOAD_CMS",
+      "service": "astro-payload-ecom"
+    }
+  ]
+}

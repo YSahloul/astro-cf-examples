@@ -1,0 +1,41 @@
+---
+import HeroVehicleCard from './HeroVehicleCard';
+
+interface Props {
+  profile: {
+    name: string;
+    tagline?: string | null;
+    description?: string | null;
+    city?: string | null;
+    state?: string | null;
+    phone?: string | null;
+    heroImage?: string | null;
+  };
+}
+
+const { profile } = Astro.props;
+---
+
+<div class="hero min-h-[600px] md:min-h-[700px] bg-neutral text-neutral-content relative">
+  {profile.heroImage && (
+    <div class="absolute inset-0 overflow-hidden">
+      <img src={profile.heroImage} alt="" class="w-full h-full object-cover" style="object-position: 50% 0%;" />
+      <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40"></div>
+    </div>
+  )}
+  <div class="hero-content flex-col lg:flex-row-reverse gap-8 lg:gap-12 w-full max-w-7xl py-16">
+    <!-- Vehicle Card -->
+    <div id="quote" class="w-full max-w-md shrink-0">
+      <HeroVehicleCard phone={profile.phone} client:load />
+    </div>
+    
+    <!-- Hero Text -->
+    <div class="text-center lg:text-left">
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-black uppercase leading-tight" style="font-family: 'Oswald', sans-serif;">
+        {profile.tagline || `Premium Wheels & Tires`}
+        {profile.city && <span class="block text-primary mt-2">in {profile.city}, {profile.state}</span>}
+      </h1>
+      {profile.description && <p class="py-6 text-xl opacity-80">{profile.description}</p>}
+    </div>
+  </div>
+</div>

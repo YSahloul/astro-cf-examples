@@ -1,0 +1,80 @@
+---
+
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<title>Astro + Cloudflare Durable Objects</title>
+		<style>
+			body {
+				font-family: system-ui, sans-serif;
+				max-width: 600px;
+				margin: 2rem auto;
+				padding: 1rem;
+				line-height: 1.5;
+			}
+			
+			.counter {
+				text-align: center;
+				margin: 2rem 0;
+				padding: 2rem;
+				background: #f5f5f5;
+				border-radius: 8px;
+			}
+			
+			.count {
+				font-size: 3rem;
+				font-weight: bold;
+				color: #0066cc;
+			}
+			
+			button {
+				background: #0066cc;
+				color: white;
+				border: none;
+				padding: 0.5rem 1rem;
+				margin: 0.5rem;
+				border-radius: 4px;
+				cursor: pointer;
+			}
+			
+			button:hover {
+				background: #0052a3;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>Astro + Cloudflare Durable Objects</h1>
+		<p>A simple persistent counter using Durable Objects.</p>
+		
+		<div class="counter">
+			<div class="count" id="count">-</div>
+			<button id="getBtn">Get Count</button>
+			<button id="incBtn">Increment</button>
+		</div>
+		
+		<p><strong>How it works:</strong> The counter value is stored in a Durable Object and persists across deployments.</p>
+		
+		<script>
+			async function getCount() {
+				const response = await fetch('/api/counter');
+				const count = await response.text();
+				document.getElementById('count').textContent = count;
+			}
+			
+			async function increment() {
+				const response = await fetch('/api/counter', { method: 'POST' });
+				const count = await response.text();
+				document.getElementById('count').textContent = count;
+			}
+			
+			document.getElementById('getBtn').onclick = getCount;
+			document.getElementById('incBtn').onclick = increment;
+			
+			getCount();
+		</script>
+	</body>
+</html>

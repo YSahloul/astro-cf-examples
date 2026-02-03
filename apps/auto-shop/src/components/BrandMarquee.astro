@@ -1,0 +1,74 @@
+---
+// Static hardcoded brands - no database needed
+const brands = [
+  { name: "US Mags", logo: "/brands/usmags.svg" },
+  { name: "Nitto", logo: "/brands/nitto.png" },
+  { name: "Toyo Tires", logo: "/brands/toyo.svg" },
+  { name: "BFGoodrich", logo: "/brands/bfgoodrich.svg" },
+  { name: "Ferrada", logo: "/brands/ferrada.png" },
+  { name: "Lethal Offroad", logo: "/brands/lethal.png" },
+  { name: "Fuel Off-Road", logo: "/brands/fuel-wordmark.png" },
+];
+---
+
+<div class="bg-base-100 py-8 md:py-10 border-y-4 border-base-300 overflow-hidden" id="brands-marquee">
+  <p class="text-center text-xs font-bold tracking-[0.3em] opacity-50 uppercase mb-6 md:mb-8">Authorized Dealer For</p>
+  <div class="w-full inline-flex flex-nowrap overflow-hidden">
+    <div class="flex items-center animate-infinite-scroll">
+      {[...brands, ...brands].map((b) => (
+        <div class="brand-logo-wrapper flex-shrink-0 mx-6 md:mx-14 flex items-center justify-center h-12 md:h-16 w-24 md:w-40">
+          <img 
+            src={b.logo} 
+            alt={b.name}
+            title={b.name}
+            class="brand-logo max-h-full max-w-full object-contain transition-all duration-300" 
+          />
+        </div>
+      ))}
+    </div>
+    <div class="flex items-center animate-infinite-scroll" aria-hidden="true">
+      {[...brands, ...brands].map((b) => (
+        <div class="brand-logo-wrapper flex-shrink-0 mx-6 md:mx-14 flex items-center justify-center h-12 md:h-16 w-24 md:w-40">
+          <img 
+            src={b.logo} 
+            alt={b.name}
+            title={b.name}
+            class="brand-logo max-h-full max-w-full object-contain transition-all duration-300" 
+          />
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
+<script>
+  function initBrandSpotlight() {
+    const marquee = document.getElementById('brands-marquee');
+    if (!marquee) return;
+    const spotlightWidth = 600;
+    function updateLogos() {
+      const logos = marquee.querySelectorAll('.brand-logo');
+      const viewportCenterX = window.innerWidth / 2;
+      logos.forEach((logo) => {
+        const rect = logo.getBoundingClientRect();
+        const logoCenter = rect.left + rect.width / 2;
+        const distanceFromCenter = Math.abs(logoCenter - viewportCenterX);
+        const intensity = Math.max(0, 1 - distanceFromCenter / spotlightWidth);
+        const grayscale = 1 - intensity;
+        const opacity = 0.3 + (intensity * 0.7);
+        const scale = 1 + (intensity * 0.15);
+        const el = logo as HTMLElement;
+        el.style.filter = `grayscale(${grayscale})`;
+        el.style.opacity = String(opacity);
+        el.style.transform = `scale(${scale})`;
+      });
+      requestAnimationFrame(updateLogos);
+    }
+    updateLogos();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBrandSpotlight);
+  } else {
+    initBrandSpotlight();
+  }
+</script>

@@ -1,0 +1,54 @@
+---
+interface Props {
+  name: string;
+  phone?: string | null;
+}
+
+const { name, phone } = Astro.props;
+const nameParts = name.split(' ');
+const firstName = nameParts[0];
+const restOfName = nameParts.slice(1).join(' ');
+---
+
+<div class="bg-neutral text-neutral-content sticky top-0 z-50 border-b-4 border-primary">
+  <div class="navbar max-w-7xl mx-auto">
+  <div class="navbar-start">
+    <div class="dropdown">
+      <div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" />
+        </svg>
+      </div>
+      <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-neutral rounded-box w-52">
+        <li><a href="#services">Services</a></li>
+        <li><a href="#gallery">Gallery</a></li>
+        <li><a href="#hours">Hours</a></li>
+        <li><a href="#quote" class="text-primary font-bold">Get Quote</a></li>
+      </ul>
+    </div>
+    <a href="/" class="btn btn-ghost text-xl md:text-2xl font-bold normal-case" style="font-family: 'Oswald', sans-serif;">
+      <span class="text-primary">{firstName}</span> {restOfName}
+    </a>
+  </div>
+  
+  <div class="navbar-center hidden lg:flex">
+    <ul class="menu menu-horizontal px-1 font-bold uppercase text-sm tracking-wide">
+      <li><a href="#services" class="hover:text-primary">Services</a></li>
+      <li><a href="#gallery" class="hover:text-primary">Gallery</a></li>
+      <li><a href="#hours" class="hover:text-primary">Hours</a></li>
+    </ul>
+  </div>
+  
+  <div class="navbar-end gap-2">
+    {phone && (
+      <a href={`tel:${phone.replace(/\D/g, '')}`} class="btn btn-ghost btn-sm hidden md:flex gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+        </svg>
+        {phone}
+      </a>
+    )}
+    <a href="#quote" class="btn btn-primary btn-sm md:btn-md">Get Quote</a>
+  </div>
+  </div>
+</div>
