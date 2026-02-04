@@ -1,6 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { createPayload, type Product, type Media } from '../../lib/payload';
+import { createPayload, type Product, type Media, TENANT_ID } from '../../lib/payload';
 
 const payload = createPayload(Astro.locals.runtime?.env?.PAYLOAD_CMS);
 
@@ -12,7 +12,10 @@ let error: string | null = null;
 try {
   const response = await payload.find({
     collection: 'products',
-    where: { _status: { equals: 'published' } },
+    where: { 
+      _status: { equals: 'published' },
+      tenant: { equals: TENANT_ID },
+    },
     limit: 12,
     page,
   });

@@ -14,6 +14,9 @@ import { createPayloadClient, type ServiceBinding, type PayloadClient } from '@r
 
 const PAYLOAD_API_URL = 'https://astro-payload-ecom.agenticflows.workers.dev/api';
 
+// Storefront tenant ID
+export const TENANT_ID = 1;
+
 /**
  * Create Payload client for this storefront
  */
@@ -21,7 +24,7 @@ export function createPayload(serviceBinding?: ServiceBinding) {
   return createPayloadClient({
     baseURL: PAYLOAD_API_URL,
     serviceBinding,
-    tenantId: 'storefront', // Default tenant for this app
+    tenantId: TENANT_ID,
   });
 }
 

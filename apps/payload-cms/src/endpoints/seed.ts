@@ -245,7 +245,18 @@ export const seedEndpoint: Endpoint = {
           })
 
           if (existing.docs.length > 0) {
-            results.push(`Product ${productData.sku} already exists, skipping`)
+            const existingProduct = existing.docs[0]
+            // Update tenant if not set
+            if (!existingProduct.tenant) {
+              await payload.update({
+                collection: 'products',
+                id: existingProduct.id,
+                data: { tenant: storefrontTenantId },
+              })
+              results.push(`Updated product ${productData.sku} with tenant: storefront`)
+            } else {
+              results.push(`Product ${productData.sku} already exists, skipping`)
+            }
             continue
           }
 
