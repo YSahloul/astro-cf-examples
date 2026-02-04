@@ -23,7 +23,7 @@ export function createEcommerceClient(serviceBinding?: ServiceBinding) {
   return createPayloadClient({
     baseURL: PAYLOAD_API_URL,
     serviceBinding,
-    tenantId: TENANT_SLUG,
+    tenantSlug: TENANT_SLUG,
   });
 }
 
@@ -40,13 +40,13 @@ export async function getProducts(
 ) {
   const { category, limit = 20, page = 1 } = options;
 
-  const where: Record<string, unknown> = {
+  const where: any = {
     _status: { equals: 'published' },
   };
 
   // Add tenant filter
-  if (client.tenantId) {
-    where['tenant.slug'] = { equals: client.tenantId };
+  if (client.tenantSlug) {
+    where['tenant.slug'] = { equals: client.tenantSlug };
   }
 
   // Add category filter if specified
@@ -67,13 +67,13 @@ export async function getProducts(
  * Get a single product by slug
  */
 export async function getProductBySlug(client: PayloadClient, slug: string) {
-  const where: Record<string, unknown> = {
+  const where: any = {
     slug: { equals: slug },
     _status: { equals: 'published' },
   };
 
-  if (client.tenantId) {
-    where['tenant.slug'] = { equals: client.tenantId };
+  if (client.tenantSlug) {
+    where['tenant.slug'] = { equals: client.tenantSlug };
   }
 
   const result = await client.find({

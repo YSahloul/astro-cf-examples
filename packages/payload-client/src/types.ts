@@ -74,6 +74,14 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    tenants: Tenant;
+    'business-profiles': BusinessProfile;
+    'business-hours': BusinessHour;
+    services: Service;
+    testimonials: Testimonial;
+    leads: Lead;
+    quotes: Quote;
+    agents: Agent;
     addresses: Address;
     variants: Variant;
     variantTypes: VariantType;
@@ -98,6 +106,14 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    tenants: TenantsSelect<false> | TenantsSelect<true>;
+    'business-profiles': BusinessProfilesSelect<false> | BusinessProfilesSelect<true>;
+    'business-hours': BusinessHoursSelect<false> | BusinessHoursSelect<true>;
+    services: ServicesSelect<false> | ServicesSelect<true>;
+    testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
+    leads: LeadsSelect<false> | LeadsSelect<true>;
+    quotes: QuotesSelect<false> | QuotesSelect<true>;
+    agents: AgentsSelect<false> | AgentsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
     variants: VariantsSelect<false> | VariantsSelect<true>;
     variantTypes: VariantTypesSelect<false> | VariantTypesSelect<true>;
@@ -168,6 +184,12 @@ export interface User {
   id: number;
   name?: string | null;
   roles?: ('admin' | 'customer')[] | null;
+  tenants?:
+    | {
+        tenant: number | Tenant;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -187,6 +209,63 @@ export interface User {
   password?: string | null;
 }
 /**
+ * Manage your store tenants. Each tenant has its own products, carts, and orders.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tenants".
+ */
+export interface Tenant {
+  id: number;
+  /**
+   * Display name for the store (e.g., "Auto Shop", "General Store")
+   */
+  name: string;
+  /**
+   * URL-safe identifier (e.g., "auto-shop", "storefront")
+   */
+  slug: string;
+  /**
+   * Primary domain for this tenant (e.g., "auto-shop-astro.agenticflows.workers.dev")
+   */
+  domain?: string | null;
+  /**
+   * Additional domains that should resolve to this tenant
+   */
+  domains?:
+    | {
+        domain: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Inactive tenants cannot be accessed
+   */
+  active?: boolean | null;
+  currency?: ('USD' | 'EUR' | 'GBP' | 'CAD') | null;
+  /**
+   * Allow customers to checkout without creating an account
+   */
+  allowGuestCheckout?: boolean | null;
+  /**
+   * Default tax rate percentage
+   */
+  taxRate?: number | null;
+  logo?: (number | null) | Media;
+  /**
+   * Hex color code (e.g., #3B82F6)
+   */
+  primaryColor?: string | null;
+  /**
+   * Short description of the store
+   */
+  description?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
@@ -202,6 +281,205 @@ export interface Media {
   filesize?: number | null;
   width?: number | null;
   height?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "business-profiles".
+ */
+export interface BusinessProfile {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  name: string;
+  tagline?: string | null;
+  description?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: {
+    street?: string | null;
+    city?: string | null;
+    state?: string | null;
+    zip?: string | null;
+  };
+  heroImage?: (number | null) | Media;
+  social?: {
+    instagram?: string | null;
+    facebook?: string | null;
+    twitter?: string | null;
+    youtube?: string | null;
+  };
+  /**
+   * External financing application URL
+   */
+  financingUrl?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "business-hours".
+ */
+export interface BusinessHour {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+  open?: string | null;
+  close?: string | null;
+  /**
+   * Check if closed this day
+   */
+  closed?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "services".
+ */
+export interface Service {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  name: string;
+  description?: string | null;
+  price?: number | null;
+  duration?: string | null;
+  icon?: ('wrench' | 'tire' | 'car' | 'gauge' | 'shield' | 'settings') | null;
+  featured?: boolean | null;
+  sortOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "testimonials".
+ */
+export interface Testimonial {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  name: string;
+  text: string;
+  rating?: number | null;
+  source?: ('google' | 'yelp' | 'facebook' | 'website' | 'other') | null;
+  date?: string | null;
+  featured?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "leads".
+ */
+export interface Lead {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  vehicle?: {
+    year?: number | null;
+    make?: string | null;
+    model?: string | null;
+    trim?: string | null;
+  };
+  /**
+   * Service they are interested in
+   */
+  service?: string | null;
+  message?: string | null;
+  status?: ('new' | 'contacted' | 'qualified' | 'quoted' | 'converted' | 'lost') | null;
+  source?: ('website' | 'ai_assistant' | 'phone' | 'walkin' | 'referral' | 'social') | null;
+  /**
+   * Internal notes about this lead
+   */
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quotes".
+ */
+export interface Quote {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  /**
+   * Unique quote identifier (auto-generated)
+   */
+  quoteId: string;
+  lead?: (number | null) | Lead;
+  vehicle?: {
+    year?: number | null;
+    make?: string | null;
+    model?: string | null;
+  };
+  intent?: ('tires_only' | 'wheels_only' | 'wheels_and_tires' | 'package') | null;
+  items?:
+    | {
+        type?: ('wheel' | 'tire' | 'suspension' | 'accessory' | 'labor') | null;
+        name?: string | null;
+        specs?: string | null;
+        quantity?: number | null;
+        unitPrice?: number | null;
+        totalPrice?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  totalPrice?: number | null;
+  /**
+   * URLs to fitment evidence builds
+   */
+  evidenceBuilds?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  status?: ('draft' | 'sent' | 'viewed' | 'accepted' | 'expired' | 'declined') | null;
+  expiresAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "agents".
+ */
+export interface Agent {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  name: string;
+  type: 'fitment' | 'lead_qual' | 'support' | 'scheduler' | 'quote';
+  description?: string | null;
+  status?: ('active' | 'inactive' | 'paused') | null;
+  /**
+   * Agent-specific configuration
+   */
+  config?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Cloudflare Durable Object ID
+   */
+  durableObjectId?: string | null;
+  /**
+   * Usage metrics
+   */
+  metrics?: {
+    totalSessions?: number | null;
+    totalMessages?: number | null;
+    leadsGenerated?: number | null;
+    quotesGenerated?: number | null;
+    lastActiveAt?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -290,6 +568,7 @@ export interface Variant {
  */
 export interface Product {
   id: number;
+  tenant?: (number | null) | Tenant;
   title: string;
   slug?: string | null;
   description?: {
@@ -375,6 +654,7 @@ export interface VariantOption {
  */
 export interface Cart {
   id: number;
+  tenant?: (number | null) | Tenant;
   items?:
     | {
         product?: (number | null) | Product;
@@ -398,6 +678,7 @@ export interface Cart {
  */
 export interface Order {
   id: number;
+  tenant?: (number | null) | Tenant;
   items?:
     | {
         product?: (number | null) | Product;
@@ -434,6 +715,7 @@ export interface Order {
  */
 export interface Transaction {
   id: number;
+  tenant?: (number | null) | Tenant;
   items?:
     | {
         product?: (number | null) | Product;
@@ -496,6 +778,38 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'tenants';
+        value: number | Tenant;
+      } | null)
+    | ({
+        relationTo: 'business-profiles';
+        value: number | BusinessProfile;
+      } | null)
+    | ({
+        relationTo: 'business-hours';
+        value: number | BusinessHour;
+      } | null)
+    | ({
+        relationTo: 'services';
+        value: number | Service;
+      } | null)
+    | ({
+        relationTo: 'testimonials';
+        value: number | Testimonial;
+      } | null)
+    | ({
+        relationTo: 'leads';
+        value: number | Lead;
+      } | null)
+    | ({
+        relationTo: 'quotes';
+        value: number | Quote;
+      } | null)
+    | ({
+        relationTo: 'agents';
+        value: number | Agent;
       } | null)
     | ({
         relationTo: 'addresses';
@@ -578,6 +892,12 @@ export interface PayloadMigration {
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
   roles?: T;
+  tenants?:
+    | T
+    | {
+        tenant?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -610,6 +930,192 @@ export interface MediaSelect<T extends boolean = true> {
   filesize?: T;
   width?: T;
   height?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tenants_select".
+ */
+export interface TenantsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  domain?: T;
+  domains?:
+    | T
+    | {
+        domain?: T;
+        id?: T;
+      };
+  active?: T;
+  currency?: T;
+  allowGuestCheckout?: T;
+  taxRate?: T;
+  logo?: T;
+  primaryColor?: T;
+  description?: T;
+  email?: T;
+  phone?: T;
+  address?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "business-profiles_select".
+ */
+export interface BusinessProfilesSelect<T extends boolean = true> {
+  tenant?: T;
+  name?: T;
+  tagline?: T;
+  description?: T;
+  phone?: T;
+  email?: T;
+  address?:
+    | T
+    | {
+        street?: T;
+        city?: T;
+        state?: T;
+        zip?: T;
+      };
+  heroImage?: T;
+  social?:
+    | T
+    | {
+        instagram?: T;
+        facebook?: T;
+        twitter?: T;
+        youtube?: T;
+      };
+  financingUrl?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "business-hours_select".
+ */
+export interface BusinessHoursSelect<T extends boolean = true> {
+  tenant?: T;
+  day?: T;
+  open?: T;
+  close?: T;
+  closed?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "services_select".
+ */
+export interface ServicesSelect<T extends boolean = true> {
+  tenant?: T;
+  name?: T;
+  description?: T;
+  price?: T;
+  duration?: T;
+  icon?: T;
+  featured?: T;
+  sortOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "testimonials_select".
+ */
+export interface TestimonialsSelect<T extends boolean = true> {
+  tenant?: T;
+  name?: T;
+  text?: T;
+  rating?: T;
+  source?: T;
+  date?: T;
+  featured?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "leads_select".
+ */
+export interface LeadsSelect<T extends boolean = true> {
+  tenant?: T;
+  name?: T;
+  email?: T;
+  phone?: T;
+  vehicle?:
+    | T
+    | {
+        year?: T;
+        make?: T;
+        model?: T;
+        trim?: T;
+      };
+  service?: T;
+  message?: T;
+  status?: T;
+  source?: T;
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quotes_select".
+ */
+export interface QuotesSelect<T extends boolean = true> {
+  tenant?: T;
+  quoteId?: T;
+  lead?: T;
+  vehicle?:
+    | T
+    | {
+        year?: T;
+        make?: T;
+        model?: T;
+      };
+  intent?: T;
+  items?:
+    | T
+    | {
+        type?: T;
+        name?: T;
+        specs?: T;
+        quantity?: T;
+        unitPrice?: T;
+        totalPrice?: T;
+        id?: T;
+      };
+  totalPrice?: T;
+  evidenceBuilds?: T;
+  status?: T;
+  expiresAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "agents_select".
+ */
+export interface AgentsSelect<T extends boolean = true> {
+  tenant?: T;
+  name?: T;
+  type?: T;
+  description?: T;
+  status?: T;
+  config?: T;
+  durableObjectId?: T;
+  metrics?:
+    | T
+    | {
+        totalSessions?: T;
+        totalMessages?: T;
+        leadsGenerated?: T;
+        quotesGenerated?: T;
+        lastActiveAt?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -677,6 +1183,7 @@ export interface VariantOptionsSelect<T extends boolean = true> {
  * via the `definition` "products_select".
  */
 export interface ProductsSelect<T extends boolean = true> {
+  tenant?: T;
   title?: T;
   slug?: T;
   description?: T;
@@ -706,6 +1213,7 @@ export interface ProductsSelect<T extends boolean = true> {
  * via the `definition` "carts_select".
  */
 export interface CartsSelect<T extends boolean = true> {
+  tenant?: T;
   items?:
     | T
     | {
@@ -728,6 +1236,7 @@ export interface CartsSelect<T extends boolean = true> {
  * via the `definition` "orders_select".
  */
 export interface OrdersSelect<T extends boolean = true> {
+  tenant?: T;
   items?:
     | T
     | {
@@ -765,6 +1274,7 @@ export interface OrdersSelect<T extends boolean = true> {
  * via the `definition` "transactions_select".
  */
 export interface TransactionsSelect<T extends boolean = true> {
+  tenant?: T;
   items?:
     | T
     | {

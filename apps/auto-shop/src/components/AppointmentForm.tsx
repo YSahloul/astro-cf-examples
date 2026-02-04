@@ -24,7 +24,25 @@ export function AppointmentForm({ services }: { services: Service[] }) {
     setErrorMessage("");
 
     try {
-      const { error } = await actions.addLead(formData);
+      // Parse vehicle string into object if provided
+      // Expected format: "2024 Toyota Tacoma" or similar
+      const vehicleParts = formData.vehicle.trim().split(' ');
+      const vehicleObj = vehicleParts.length >= 2 ? {
+        year: parseInt(vehicleParts[0]) || undefined,
+        make: vehicleParts[1] || undefined,
+        model: vehicleParts.slice(2).join(' ') || undefined,
+      } : undefined;
+
+      // Use type assertion as Astro action types may be stale
+      const { error } = await (actions.addLead as any)({
+        name: formData.name,
+        phone: formData.phone || undefined,
+        email: formData.email || undefined,
+        vehicle: vehicleObj,
+        service: formData.service || undefined,
+        message: formData.message || undefined,
+        source: 'website',
+      });
       if (error) {
         setStatus("error");
         setErrorMessage("Something went wrong. Please try again.");

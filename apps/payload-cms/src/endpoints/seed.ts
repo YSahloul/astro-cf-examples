@@ -352,6 +352,130 @@ export const seedEndpoint: Endpoint = {
           })
           results.push(`Created auto shop product: ${product.title}`)
         }
+
+        // Seed auto shop business profile
+        const existingProfile = await payload.find({
+          collection: 'business-profiles',
+          where: { 'tenant.id': { equals: autoShopTenantId } },
+          limit: 1,
+        })
+
+        if (existingProfile.docs.length === 0) {
+          await payload.create({
+            collection: 'business-profiles',
+            data: {
+              tenant: autoShopTenantId,
+              name: "Sal's Wheels & Tires",
+              tagline: "Your Trusted Source for Wheels, Tires & Suspension",
+              description: "Family-owned since 2010, we specialize in custom wheel and tire packages for trucks, Jeeps, and SUVs. Expert fitment advice and professional installation.",
+              phone: "(555) 123-4567",
+              email: "info@salswheels.com",
+              address: {
+                street: "1234 Auto Center Drive",
+                city: "Dallas",
+                state: "TX",
+                zip: "75001",
+              },
+              social: {
+                instagram: "salswheels",
+                facebook: "salswheelsandtires",
+              },
+              financingUrl: "https://apply.credova.com/example",
+            },
+          })
+          results.push("Created auto shop business profile")
+        } else {
+          results.push("Auto shop business profile already exists")
+        }
+
+        // Seed auto shop business hours
+        const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
+        for (const day of days) {
+          const existing = await payload.find({
+            collection: 'business-hours',
+            where: {
+              'tenant.id': { equals: autoShopTenantId },
+              day: { equals: day },
+            },
+            limit: 1,
+          })
+
+          if (existing.docs.length === 0) {
+            const isSunday = day === 'sunday'
+            await payload.create({
+              collection: 'business-hours',
+              data: {
+                tenant: autoShopTenantId,
+                day,
+                open: isSunday ? null : '08:00',
+                close: isSunday ? null : (day === 'saturday' ? '14:00' : '18:00'),
+                closed: isSunday,
+              },
+            })
+          }
+        }
+        results.push("Seeded auto shop business hours")
+
+        // Seed auto shop services
+        const services = [
+          { name: "Wheel & Tire Package", description: "Complete wheel and tire setup including mounting, balancing, and installation", price: 199, duration: "2-3 hours", icon: 'tire' as const, featured: true, sortOrder: 1 },
+          { name: "Suspension Lift Installation", description: "Professional lift kit installation with alignment", price: 499, duration: "4-6 hours", icon: 'car' as const, featured: true, sortOrder: 2 },
+          { name: "Tire Mounting & Balancing", description: "Per tire mounting and high-speed balancing", price: 25, duration: "30 min", icon: 'wrench' as const, featured: false, sortOrder: 3 },
+          { name: "Alignment Service", description: "Full 4-wheel alignment with computerized equipment", price: 89, duration: "1 hour", icon: 'gauge' as const, featured: false, sortOrder: 4 },
+          { name: "TPMS Service", description: "Tire pressure monitoring system sensor replacement or reprogramming", price: 45, duration: "30 min", icon: 'settings' as const, featured: false, sortOrder: 5 },
+        ]
+
+        for (const serviceData of services) {
+          const existing = await payload.find({
+            collection: 'services',
+            where: {
+              'tenant.id': { equals: autoShopTenantId },
+              name: { equals: serviceData.name },
+            },
+            limit: 1,
+          })
+
+          if (existing.docs.length === 0) {
+            await payload.create({
+              collection: 'services',
+              data: {
+                tenant: autoShopTenantId,
+                ...serviceData,
+              },
+            })
+          }
+        }
+        results.push("Seeded auto shop services")
+
+        // Seed auto shop testimonials
+        const testimonials = [
+          { name: "Mike T.", text: "Best wheel shop in Dallas! They helped me find the perfect setup for my Tacoma. Great prices and the install was flawless.", rating: 5, source: 'google' as const, featured: true },
+          { name: "Sarah K.", text: "Very knowledgeable staff. They took the time to explain all my options and made sure I got exactly what I wanted.", rating: 5, source: 'google' as const, featured: true },
+          { name: "Carlos R.", text: "Got my F-150 leveled and put on 35s. Looks amazing and drives great. Highly recommend!", rating: 5, source: 'yelp' as const, featured: false },
+        ]
+
+        for (const testimonialData of testimonials) {
+          const existing = await payload.find({
+            collection: 'testimonials',
+            where: {
+              'tenant.id': { equals: autoShopTenantId },
+              name: { equals: testimonialData.name },
+            },
+            limit: 1,
+          })
+
+          if (existing.docs.length === 0) {
+            await payload.create({
+              collection: 'testimonials',
+              data: {
+                tenant: autoShopTenantId,
+                ...testimonialData,
+                date: new Date().toISOString().split('T')[0],
+              },
+            })
+          }
+        }
+        results.push("Seeded auto shop testimonials")
       }
 
       return Response.json({ 

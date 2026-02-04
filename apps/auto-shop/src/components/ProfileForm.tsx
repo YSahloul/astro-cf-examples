@@ -1,36 +1,42 @@
 import { actions } from "astro:actions";
 import { useState } from "react";
 
+// Profile type matches Payload CMS structure
 interface Profile {
   name: string;
-  tagline: string | null;
-  description: string | null;
-  phone: string | null;
-  email: string | null;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  zip: string | null;
-  heroImage: string | null;
-  instagram: string | null;
-  facebook: string | null;
-  financingUrl: string | null;
+  tagline?: string | null;
+  description?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: {
+    street?: string | null;
+    city?: string | null;
+    state?: string | null;
+    zip?: string | null;
+  } | null;
+  heroImage?: { url?: string | null } | number | null;
+  social?: {
+    instagram?: string | null;
+    facebook?: string | null;
+  } | null;
+  financingUrl?: string | null;
 }
 
 export function ProfileForm({ profile }: { profile: Profile }) {
+  // Convert nested Payload structure to flat form fields
   const [formData, setFormData] = useState({
     name: profile.name || "",
     tagline: profile.tagline || "",
     description: profile.description || "",
     phone: profile.phone || "",
     email: profile.email || "",
-    address: profile.address || "",
-    city: profile.city || "",
-    state: profile.state || "",
-    zip: profile.zip || "",
-    heroImage: profile.heroImage || "",
-    instagram: profile.instagram || "",
-    facebook: profile.facebook || "",
+    address: profile.address?.street || "",
+    city: profile.address?.city || "",
+    state: profile.address?.state || "",
+    zip: profile.address?.zip || "",
+    heroImage: typeof profile.heroImage === 'object' ? profile.heroImage?.url || "" : "",
+    instagram: profile.social?.instagram || "",
+    facebook: profile.social?.facebook || "",
     financingUrl: profile.financingUrl || "",
   });
   const [saving, setSaving] = useState(false);
@@ -41,7 +47,28 @@ export function ProfileForm({ profile }: { profile: Profile }) {
     setSaving(true);
     setMessage("");
 
-    const { error } = await actions.updateProfile(formData);
+    // Convert flat form data to nested Payload structure
+    const payloadData = {
+      name: formData.name || undefined,
+      tagline: formData.tagline || undefined,
+      description: formData.description || undefined,
+      phone: formData.phone || undefined,
+      email: formData.email || undefined,
+      address: {
+        street: formData.address || undefined,
+        city: formData.city || undefined,
+        state: formData.state || undefined,
+        zip: formData.zip || undefined,
+      },
+      social: {
+        instagram: formData.instagram || undefined,
+        facebook: formData.facebook || undefined,
+      },
+      financingUrl: formData.financingUrl || undefined,
+    };
+
+    // Use type assertion as Astro action types may be stale
+    const { error } = await (actions.updateProfile as any)(payloadData);
 
     if (error) {
       setMessage("Error saving profile");

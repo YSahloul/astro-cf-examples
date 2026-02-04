@@ -1,6 +1,28 @@
 import { useState, useEffect } from "react";
 import { actions } from "astro:actions";
 
+// Lead type matches Payload CMS structure
+interface Lead {
+  id: number;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  vehicle?: {
+    year?: number | null;
+    make?: string | null;
+    model?: string | null;
+    trim?: string | null;
+  } | null;
+  service?: string | null;
+  message?: string | null;
+  status?: string | null;
+  source?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Flattened lead for display
 interface LeadWithAI {
   id: number;
   name: string;
@@ -52,12 +74,35 @@ export default function LeadsTable() {
     setLoading(true);
     setError(null);
     try {
-      const result = await actions.getLeadsWithAI();
+      // Use getLeads and transform to LeadWithAI format
+      const result = await actions.getLeads();
       if (result.error) {
         setError("Failed to fetch leads");
         return;
       }
-      setLeads(result.data || []);
+      
+      // Transform Payload leads to flat LeadWithAI format
+      const transformedLeads: LeadWithAI[] = (result.data || []).map((lead: any) => ({
+        id: lead.id,
+        name: lead.name,
+        email: lead.email || null,
+        phone: lead.phone || null,
+        vehicle: lead.vehicle 
+          ? `${lead.vehicle.year || ''} ${lead.vehicle.make || ''} ${lead.vehicle.model || ''}`.trim() 
+          : null,
+        service: lead.service || null,
+        message: lead.message || null,
+        status: lead.status || null,
+        createdAt: lead.createdAt || null,
+        vehicleYear: lead.vehicle?.year || null,
+        vehicleMake: lead.vehicle?.make || null,
+        vehicleModel: lead.vehicle?.model || null,
+        intent: null, // Intent will come from quotes
+        quoteId: null, // Would need to join with quotes
+        source: lead.source || null,
+      }));
+      
+      setLeads(transformedLeads);
     } catch (err) {
       setError("Failed to fetch leads");
     } finally {

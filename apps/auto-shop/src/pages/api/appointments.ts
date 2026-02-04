@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { createContentClient, createLead } from "@/lib/content";
 
 interface AppointmentBody {
   service: string;
@@ -21,31 +22,29 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    const db = (locals as any).runtime?.env?.DB;
-    if (!db) {
-      return new Response(JSON.stringify({ error: "Database not configured" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+    // Create Payload client with service binding
+    const payloadBinding = (locals as any).runtime?.env?.PAYLOAD_CMS;
+    const client = createContentClient(payloadBinding);
 
-    // Save as lead with appointment details
+    // Parse vehicle string if provided
+    const vehicleParts = vehicle?.trim().split(' ') || [];
+    const vehicleObj = vehicleParts.length >= 2 ? {
+      year: parseInt(vehicleParts[0]) || undefined,
+      make: vehicleParts[1] || undefined,
+      model: vehicleParts.slice(2).join(' ') || undefined,
+    } : undefined;
+
+    // Create lead with appointment details
     const message = `Appointment Request:\nService: ${service}\nPreferred: ${preferredDate} at ${preferredTime}`;
     
-    const result = await db.prepare(`
-      INSERT INTO leads (name, phone, email, vehicle, service, message, source, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      RETURNING id
-    `).bind(
+    const lead = await createLead(client, {
       name,
       phone,
-      null,
-      vehicle || null,
+      vehicle: vehicleObj,
       service,
       message,
-      "appointment_scheduler",
-      new Date().toISOString()
-    ).first();
+      source: 'website',
+    });
 
     // TODO: Add calendar integration here (Google Calendar, Cal.com, etc.)
     // await createCalendarEvent({ service, date: preferredDate, time: preferredTime, name, phone, vehicle });
@@ -53,7 +52,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response(JSON.stringify({ 
       success: true,
       appointment: {
-        id: result?.id,
+        id: lead.id,
         service,
         preferredDate,
         preferredTime,

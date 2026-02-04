@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { createContentClient, createLead } from "@/lib/content";
 
 interface QuoteBody {
   name: string;
@@ -20,41 +21,40 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    // Save to database using raw D1
-    const db = (locals as any).runtime?.env?.DB;
-    if (!db) {
-      return new Response(JSON.stringify({ error: "Database not configured" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+    // Create Payload client with service binding
+    const payloadBinding = (locals as any).runtime?.env?.PAYLOAD_CMS;
+    const client = createContentClient(payloadBinding);
 
-    const result = await db.prepare(`
-      INSERT INTO leads (name, phone, email, vehicle, service, message, source, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      RETURNING id
-    `).bind(
+    // Parse vehicle string if provided
+    const vehicleParts = vehicle?.trim().split(' ') || [];
+    const vehicleObj = vehicleParts.length >= 2 ? {
+      year: parseInt(vehicleParts[0]) || undefined,
+      make: vehicleParts[1] || undefined,
+      model: vehicleParts.slice(2).join(' ') || undefined,
+    } : undefined;
+
+    // Create lead in Payload
+    const lead = await createLead(client, {
       name,
       phone,
-      email || null,
-      vehicle || null,
-      "Wheel & Tire Fitment",
-      `Looking for: ${goal || "Not specified"}`,
-      "fitment_quiz",
-      new Date().toISOString()
-    ).first();
+      email: email || undefined,
+      vehicle: vehicleObj,
+      service: "Wheel & Tire Fitment",
+      message: `Looking for: ${goal || "Not specified"}`,
+      source: 'website',
+    });
 
     // Return lead data for BlueBubbles webhook or other integrations
     return new Response(JSON.stringify({ 
       success: true,
       lead: {
-        id: result?.id,
+        id: lead.id,
         name,
         phone,
         email,
         vehicle,
         goal,
-        created_at: new Date().toISOString(),
+        created_at: lead.createdAt,
       }
     }), {
       status: 200,
