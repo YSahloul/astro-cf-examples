@@ -74,6 +74,7 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    tenants: Tenant;
     addresses: Address;
     variants: Variant;
     variantTypes: VariantType;
@@ -98,6 +99,7 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    tenants: TenantsSelect<false> | TenantsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
     variants: VariantsSelect<false> | VariantsSelect<true>;
     variantTypes: VariantTypesSelect<false> | VariantTypesSelect<true>;
@@ -168,6 +170,12 @@ export interface User {
   id: number;
   name?: string | null;
   roles?: ('admin' | 'customer')[] | null;
+  tenants?:
+    | {
+        tenant: number | Tenant;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -185,6 +193,63 @@ export interface User {
       }[]
     | null;
   password?: string | null;
+}
+/**
+ * Manage your store tenants. Each tenant has its own products, carts, and orders.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tenants".
+ */
+export interface Tenant {
+  id: number;
+  /**
+   * Display name for the store (e.g., "Auto Shop", "General Store")
+   */
+  name: string;
+  /**
+   * URL-safe identifier (e.g., "auto-shop", "storefront")
+   */
+  slug: string;
+  /**
+   * Primary domain for this tenant (e.g., "auto-shop-astro.agenticflows.workers.dev")
+   */
+  domain?: string | null;
+  /**
+   * Additional domains that should resolve to this tenant
+   */
+  domains?:
+    | {
+        domain: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Inactive tenants cannot be accessed
+   */
+  active?: boolean | null;
+  currency?: ('USD' | 'EUR' | 'GBP' | 'CAD') | null;
+  /**
+   * Allow customers to checkout without creating an account
+   */
+  allowGuestCheckout?: boolean | null;
+  /**
+   * Default tax rate percentage
+   */
+  taxRate?: number | null;
+  logo?: (number | null) | Media;
+  /**
+   * Hex color code (e.g., #3B82F6)
+   */
+  primaryColor?: string | null;
+  /**
+   * Short description of the store
+   */
+  description?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -290,6 +355,7 @@ export interface Variant {
  */
 export interface Product {
   id: number;
+  tenant?: (number | null) | Tenant;
   title: string;
   slug?: string | null;
   description?: {
@@ -375,6 +441,7 @@ export interface VariantOption {
  */
 export interface Cart {
   id: number;
+  tenant?: (number | null) | Tenant;
   items?:
     | {
         product?: (number | null) | Product;
@@ -398,6 +465,7 @@ export interface Cart {
  */
 export interface Order {
   id: number;
+  tenant?: (number | null) | Tenant;
   items?:
     | {
         product?: (number | null) | Product;
@@ -434,6 +502,7 @@ export interface Order {
  */
 export interface Transaction {
   id: number;
+  tenant?: (number | null) | Tenant;
   items?:
     | {
         product?: (number | null) | Product;
@@ -496,6 +565,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'tenants';
+        value: number | Tenant;
       } | null)
     | ({
         relationTo: 'addresses';
@@ -578,6 +651,12 @@ export interface PayloadMigration {
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
   roles?: T;
+  tenants?:
+    | T
+    | {
+        tenant?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -610,6 +689,33 @@ export interface MediaSelect<T extends boolean = true> {
   filesize?: T;
   width?: T;
   height?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tenants_select".
+ */
+export interface TenantsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  domain?: T;
+  domains?:
+    | T
+    | {
+        domain?: T;
+        id?: T;
+      };
+  active?: T;
+  currency?: T;
+  allowGuestCheckout?: T;
+  taxRate?: T;
+  logo?: T;
+  primaryColor?: T;
+  description?: T;
+  email?: T;
+  phone?: T;
+  address?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -677,6 +783,7 @@ export interface VariantOptionsSelect<T extends boolean = true> {
  * via the `definition` "products_select".
  */
 export interface ProductsSelect<T extends boolean = true> {
+  tenant?: T;
   title?: T;
   slug?: T;
   description?: T;
@@ -706,6 +813,7 @@ export interface ProductsSelect<T extends boolean = true> {
  * via the `definition` "carts_select".
  */
 export interface CartsSelect<T extends boolean = true> {
+  tenant?: T;
   items?:
     | T
     | {
@@ -728,6 +836,7 @@ export interface CartsSelect<T extends boolean = true> {
  * via the `definition` "orders_select".
  */
 export interface OrdersSelect<T extends boolean = true> {
+  tenant?: T;
   items?:
     | T
     | {
@@ -765,6 +874,7 @@ export interface OrdersSelect<T extends boolean = true> {
  * via the `definition` "transactions_select".
  */
 export interface TransactionsSelect<T extends boolean = true> {
+  tenant?: T;
   items?:
     | T
     | {

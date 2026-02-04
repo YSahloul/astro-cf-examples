@@ -1,18 +1,39 @@
 import type { CollectionConfig } from 'payload'
 
+/**
+ * Tenants collection for multi-tenant e-commerce
+ * 
+ * Each tenant represents a separate store/shop with its own:
+ * - Products
+ * - Carts
+ * - Orders
+ * - Transactions
+ * 
+ * Tenants are resolved by domain in the frontend apps.
+ */
 export const Tenants: CollectionConfig = {
   slug: 'tenants',
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'slug', 'active', 'createdAt'],
+    defaultColumns: ['name', 'slug', 'domain', 'active', 'createdAt'],
+    description: 'Manage your store tenants. Each tenant has its own products, carts, and orders.',
   },
   access: {
     // Only admins can manage tenants
     read: ({ req: { user } }) => {
       if (!user) return false
+      // Admins can read all tenants
       if (user.roles?.includes('admin')) return true
-      // Users can read their own tenant
-      return { id: { equals: user.tenant } }
+      // Regular users can only see tenants they belong to
+      // The multi-tenant plugin adds a 'tenants' array field to users
+      const userWithTenants = user as typeof user & { tenants?: Array<{ tenant: number | { id: number } }> }
+      const userTenants = userWithTenants.tenants?.map((t) => 
+        typeof t.tenant === 'number' ? t.tenant : t.tenant?.id
+      ).filter(Boolean)
+      if (userTenants?.length) {
+        return { id: { in: userTenants } }
+      }
+      return false
     },
     create: ({ req: { user } }) => user?.roles?.includes('admin') ?? false,
     update: ({ req: { user } }) => user?.roles?.includes('admin') ?? false,
@@ -23,6 +44,9 @@ export const Tenants: CollectionConfig = {
       name: 'name',
       type: 'text',
       required: true,
+      admin: {
+        description: 'Display name for the store (e.g., "Auto Shop", "General Store")',
+      },
     },
     {
       name: 'slug',
@@ -31,7 +55,7 @@ export const Tenants: CollectionConfig = {
       unique: true,
       index: true,
       admin: {
-        description: 'Unique identifier for API calls (e.g., "auto-shop", "storefront")',
+        description: 'URL-safe identifier (e.g., "auto-shop", "storefront")',
       },
       hooks: {
         beforeValidate: [
@@ -50,9 +74,25 @@ export const Tenants: CollectionConfig = {
     {
       name: 'domain',
       type: 'text',
+      unique: true,
+      index: true,
       admin: {
-        description: 'Primary domain for this tenant (optional)',
+        description: 'Primary domain for this tenant (e.g., "auto-shop-astro.agenticflows.workers.dev")',
       },
+    },
+    {
+      name: 'domains',
+      type: 'array',
+      admin: {
+        description: 'Additional domains that should resolve to this tenant',
+      },
+      fields: [
+        {
+          name: 'domain',
+          type: 'text',
+          required: true,
+        },
+      ],
     },
     {
       name: 'active',
@@ -60,26 +100,85 @@ export const Tenants: CollectionConfig = {
       defaultValue: true,
       admin: {
         position: 'sidebar',
+        description: 'Inactive tenants cannot be accessed',
       },
     },
     {
-      name: 'settings',
-      type: 'group',
-      fields: [
+      type: 'tabs',
+      tabs: [
         {
-          name: 'currency',
-          type: 'select',
-          defaultValue: 'USD',
-          options: [
-            { label: 'USD', value: 'USD' },
-            { label: 'EUR', value: 'EUR' },
-            { label: 'GBP', value: 'GBP' },
+          label: 'Settings',
+          fields: [
+            {
+              name: 'currency',
+              type: 'select',
+              defaultValue: 'USD',
+              options: [
+                { label: 'USD ($)', value: 'USD' },
+                { label: 'EUR (€)', value: 'EUR' },
+                { label: 'GBP (£)', value: 'GBP' },
+                { label: 'CAD (C$)', value: 'CAD' },
+              ],
+            },
+            {
+              name: 'allowGuestCheckout',
+              type: 'checkbox',
+              defaultValue: true,
+              admin: {
+                description: 'Allow customers to checkout without creating an account',
+              },
+            },
+            {
+              name: 'taxRate',
+              type: 'number',
+              min: 0,
+              max: 100,
+              admin: {
+                description: 'Default tax rate percentage',
+              },
+            },
           ],
         },
         {
-          name: 'allowGuestCheckout',
-          type: 'checkbox',
-          defaultValue: true,
+          label: 'Branding',
+          fields: [
+            {
+              name: 'logo',
+              type: 'upload',
+              relationTo: 'media',
+            },
+            {
+              name: 'primaryColor',
+              type: 'text',
+              admin: {
+                description: 'Hex color code (e.g., #3B82F6)',
+              },
+            },
+            {
+              name: 'description',
+              type: 'textarea',
+              admin: {
+                description: 'Short description of the store',
+              },
+            },
+          ],
+        },
+        {
+          label: 'Contact',
+          fields: [
+            {
+              name: 'email',
+              type: 'email',
+            },
+            {
+              name: 'phone',
+              type: 'text',
+            },
+            {
+              name: 'address',
+              type: 'textarea',
+            },
+          ],
         },
       ],
     },

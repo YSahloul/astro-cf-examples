@@ -8,6 +8,7 @@ import { CloudflareContext, getCloudflareContext } from '@opennextjs/cloudflare'
 import { GetPlatformProxyOptions } from 'wrangler'
 import { r2Storage } from '@payloadcms/storage-r2'
 import { ecommercePlugin } from '@payloadcms/plugin-ecommerce'
+import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
@@ -21,6 +22,7 @@ import {
   adminOnlyFieldAccess,
   adminOrPublishedStatus,
 } from './access'
+import type { Config } from './payload-types'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -54,6 +56,8 @@ export default buildConfig({
       bucket: cloudflare.env.R2 as any,
       collections: { media: true },
     }),
+    // E-commerce plugin MUST come before multi-tenant plugin
+    // because multi-tenant needs the collections to exist first
     ecommercePlugin({
       access: {
         adminOnlyFieldAccess,
@@ -66,7 +70,7 @@ export default buildConfig({
       customers: {
         slug: 'users',
       },
-      // Enable all ecommerce features with custom product fields
+      // Custom product fields
       products: {
         productsCollectionOverride: ({ defaultCollection }) => ({
           ...defaultCollection,
@@ -75,53 +79,8 @@ export default buildConfig({
             useAsTitle: 'title',
             defaultColumns: ['title', 'tenant', 'priceInUSD', 'inventory', '_status'],
           },
-          access: {
-            // Anyone can read published products (filtered by tenant in query)
-            read: () => true,
-            // Only admins and tenant owners can create/update
-            create: ({ req: { user } }) => {
-              if (!user) return false
-              return user.roles?.includes('admin') || Boolean(user.tenant)
-            },
-            update: ({ req: { user } }) => {
-              if (!user) return false
-              if (user.roles?.includes('admin')) return true
-              // Tenant users can only update their own products
-              return { tenant: { equals: user.tenant } }
-            },
-            delete: ({ req: { user } }) => {
-              if (!user) return false
-              if (user.roles?.includes('admin')) return true
-              return { tenant: { equals: user.tenant } }
-            },
-          },
           fields: [
-            // Tenant field for multi-tenancy
-            {
-              name: 'tenant',
-              type: 'relationship',
-              relationTo: 'tenants',
-              required: true,
-              index: true,
-              admin: {
-                position: 'sidebar',
-                description: 'The store this product belongs to',
-              },
-              // Auto-set tenant from current user if not admin
-              hooks: {
-                beforeValidate: [
-                  ({ value, req }) => {
-                    if (value) return value
-                    const user = req.user as { tenant?: number; roles?: string[] } | undefined
-                    if (user?.tenant && !user?.roles?.includes('admin')) {
-                      return user.tenant
-                    }
-                    return value
-                  },
-                ],
-              },
-            },
-            // Add custom fields before the default ones
+            // Custom fields
             {
               name: 'title',
               type: 'text',
@@ -196,38 +155,31 @@ export default buildConfig({
       },
       carts: {
         allowGuestCarts: true,
-        cartsCollectionOverride: ({ defaultCollection }) => ({
-          ...defaultCollection,
-          fields: [
-            // Tenant field for multi-tenancy
-            {
-              name: 'tenant',
-              type: 'relationship',
-              relationTo: 'tenants',
-              required: true,
-              index: true,
-              admin: {
-                position: 'sidebar',
-              },
-            },
-            ...defaultCollection.fields,
-          ],
-        }),
       },
       addresses: true,
       inventory: true,
       orders: true,
       transactions: true,
-      // Stripe payments (configure with env vars)
-      // payments: {
-      //   paymentMethods: [
-      //     stripeAdapter({
-      //       secretKey: process.env.STRIPE_SECRET_KEY!,
-      //       publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
-      //       webhookSecret: process.env.STRIPE_WEBHOOKS_SIGNING_SECRET!,
-      //     }),
-      //   ],
-      // },
+    }),
+    // Multi-tenant plugin - adds tenant field to specified collections
+    // and provides tenant selector in admin UI
+    // MUST come after ecommerce plugin so collections exist
+    multiTenantPlugin<Config>({
+      // Collections that should be tenant-scoped
+      collections: {
+        // Products are tenant-specific
+        products: {},
+        // Carts are tenant-specific
+        carts: {},
+        // Orders are tenant-specific
+        orders: {},
+        // Transactions are tenant-specific
+        transactions: {},
+      },
+      // Super admins can access all tenants
+      userHasAccessToAllTenants: (user) => {
+        return user?.roles?.includes('admin') ?? false
+      },
     }),
   ],
 })

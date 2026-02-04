@@ -31,6 +31,7 @@
     "@payloadcms/db-d1-sqlite": "3.73.0",
     "@payloadcms/next": "3.73.0",
     "@payloadcms/plugin-ecommerce": "^3.74.0",
+    "@payloadcms/plugin-multi-tenant": "^3.74.0",
     "@payloadcms/richtext-lexical": "3.73.0",
     "@payloadcms/storage-r2": "3.73.0",
     "@payloadcms/ui": "3.73.0",

@@ -4,7 +4,7 @@ export const Users: CollectionConfig = {
   slug: 'users',
   admin: {
     useAsTitle: 'email',
-    defaultColumns: ['email', 'name', 'roles', 'tenant', 'createdAt'],
+    defaultColumns: ['email', 'name', 'roles', 'createdAt'],
   },
   auth: true,
   fields: [
@@ -29,22 +29,7 @@ export const Users: CollectionConfig = {
         },
       },
     },
-    {
-      name: 'tenant',
-      type: 'relationship',
-      relationTo: 'tenants',
-      hasMany: false,
-      saveToJWT: true,
-      admin: {
-        position: 'sidebar',
-        description: 'The tenant this user belongs to',
-      },
-      access: {
-        update: ({ req: { user } }) => {
-          const u = user as { roles?: string[] } | null
-          return u?.roles?.includes('admin') ?? false
-        },
-      },
-    },
+    // Note: The multi-tenant plugin automatically adds a 'tenants' array field
+    // that allows users to belong to multiple tenants with different roles
   ],
 }

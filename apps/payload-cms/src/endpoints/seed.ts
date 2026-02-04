@@ -1,6 +1,35 @@
 import type { Endpoint } from 'payload'
 
-const products = [
+// Tenant definitions
+const tenants = [
+  {
+    name: 'Storefront',
+    slug: 'storefront',
+    domain: 'astro-storefront.agenticflows.workers.dev',
+    domains: [
+      { domain: 'localhost:4321' },
+    ],
+    currency: 'USD' as const,
+    allowGuestCheckout: true,
+    description: 'General e-commerce storefront',
+    active: true,
+  },
+  {
+    name: 'Auto Shop',
+    slug: 'auto-shop',
+    domain: 'auto-shop-astro.agenticflows.workers.dev',
+    domains: [
+      { domain: 'localhost:4322' },
+    ],
+    currency: 'USD' as const,
+    allowGuestCheckout: true,
+    description: 'Automotive wheels, tires, and accessories',
+    active: true,
+  },
+]
+
+// Products for the general storefront
+const storefrontProducts = [
   {
     title: 'Classic Cotton T-Shirt',
     shortDescription: 'A comfortable, everyday essential made from 100% organic cotton.',
@@ -63,6 +92,70 @@ const products = [
   },
 ]
 
+// Products for the auto shop
+const autoShopProducts = [
+  {
+    title: 'Fuel Off-Road Wheels - 20x10',
+    shortDescription: 'Aggressive off-road wheels with -18mm offset. Perfect for lifted trucks.',
+    category: 'Wheels',
+    sku: 'FUEL-D531-20',
+    inventory: 24,
+    priceInUSD: 349.99,
+    priceInUSDEnabled: true,
+    _status: 'published' as const,
+  },
+  {
+    title: 'BFGoodrich All-Terrain T/A KO2 - 285/70R17',
+    shortDescription: 'The toughest all-terrain tire for trucks and SUVs. CoreGard Technology.',
+    category: 'Tires',
+    sku: 'BFG-KO2-285',
+    inventory: 40,
+    priceInUSD: 289.99,
+    priceInUSDEnabled: true,
+    _status: 'published' as const,
+  },
+  {
+    title: 'Rough Country 3" Leveling Kit',
+    shortDescription: 'Easy bolt-on installation. Fits 2019-2024 Silverado/Sierra 1500.',
+    category: 'Suspension',
+    sku: 'RC-1323',
+    inventory: 15,
+    priceInUSD: 149.99,
+    priceInUSDEnabled: true,
+    _status: 'published' as const,
+  },
+  {
+    title: 'Method Race Wheels MR305 NV - 17x8.5',
+    shortDescription: 'HD Series. Machined face with matte black lip. 6x139.7 bolt pattern.',
+    category: 'Wheels',
+    sku: 'METHOD-305-17',
+    inventory: 16,
+    priceInUSD: 289.99,
+    priceInUSDEnabled: true,
+    _status: 'published' as const,
+  },
+  {
+    title: 'Nitto Ridge Grappler - 33x12.50R20',
+    shortDescription: 'Hybrid terrain tire. Quiet on-road, aggressive off-road performance.',
+    category: 'Tires',
+    sku: 'NITTO-RG-33',
+    inventory: 32,
+    priceInUSD: 379.99,
+    priceInUSDEnabled: true,
+    _status: 'published' as const,
+  },
+  {
+    title: 'Wheel Installation Kit',
+    shortDescription: 'Includes lug nuts, hub rings, and valve stems. Universal fit.',
+    category: 'Accessories',
+    sku: 'ACC-INSTALL-KIT',
+    inventory: 100,
+    priceInUSD: 49.99,
+    priceInUSDEnabled: true,
+    _status: 'published' as const,
+  },
+]
+
 export const seedEndpoint: Endpoint = {
   path: '/seed',
   method: 'post',
@@ -77,14 +170,15 @@ export const seedEndpoint: Endpoint = {
         return Response.json({ error: 'Invalid seed secret' }, { status: 401 })
       }
 
-      // Check if admin user exists
+      // Create or get admin user
       const existingUsers = await payload.find({
         collection: 'users',
         limit: 1,
       })
 
+      let adminUser: any
       if (existingUsers.docs.length === 0) {
-        await payload.create({
+        adminUser = await payload.create({
           collection: 'users',
           data: {
             email: 'admin@example.com',
@@ -95,10 +189,35 @@ export const seedEndpoint: Endpoint = {
         })
         results.push('Created admin user: admin@example.com / Admin123!')
       } else {
-        results.push('Users already exist, skipping admin creation')
+        adminUser = existingUsers.docs[0]
+        results.push('Admin user already exists')
       }
 
-      // Get existing products and delete incomplete ones
+      // Create tenants
+      const createdTenants: Record<string, number> = {}
+      
+      for (const tenantData of tenants) {
+        const existing = await payload.find({
+          collection: 'tenants',
+          where: {
+            slug: { equals: tenantData.slug },
+          },
+        })
+
+        if (existing.docs.length > 0) {
+          createdTenants[tenantData.slug] = existing.docs[0].id
+          results.push(`Tenant "${tenantData.name}" already exists (ID: ${existing.docs[0].id})`)
+        } else {
+          const tenant = await payload.create({
+            collection: 'tenants',
+            data: tenantData,
+          })
+          createdTenants[tenantData.slug] = tenant.id
+          results.push(`Created tenant: ${tenantData.name} (ID: ${tenant.id})`)
+        }
+      }
+
+      // Delete incomplete products
       const existingProducts = await payload.find({
         collection: 'products',
         limit: 100,
@@ -114,28 +233,65 @@ export const seedEndpoint: Endpoint = {
         }
       }
 
-      // Create products
-      for (const productData of products) {
-        const existing = await payload.find({
-          collection: 'products',
-          where: {
-            sku: { equals: productData.sku },
-          },
-        })
+      // Seed storefront products
+      const storefrontTenantId = createdTenants['storefront']
+      if (storefrontTenantId) {
+        for (const productData of storefrontProducts) {
+          const existing = await payload.find({
+            collection: 'products',
+            where: {
+              sku: { equals: productData.sku },
+            },
+          })
 
-        if (existing.docs.length > 0) {
-          results.push(`Product ${productData.sku} already exists, skipping`)
-          continue
+          if (existing.docs.length > 0) {
+            results.push(`Product ${productData.sku} already exists, skipping`)
+            continue
+          }
+
+          const product = await payload.create({
+            collection: 'products',
+            data: {
+              ...productData,
+              tenant: storefrontTenantId,
+            },
+          })
+          results.push(`Created storefront product: ${product.title}`)
         }
-
-        const product = await payload.create({
-          collection: 'products',
-          data: productData,
-        })
-        results.push(`Created product: ${product.title} (ID: ${product.id})`)
       }
 
-      return Response.json({ success: true, results })
+      // Seed auto shop products
+      const autoShopTenantId = createdTenants['auto-shop']
+      if (autoShopTenantId) {
+        for (const productData of autoShopProducts) {
+          const existing = await payload.find({
+            collection: 'products',
+            where: {
+              sku: { equals: productData.sku },
+            },
+          })
+
+          if (existing.docs.length > 0) {
+            results.push(`Product ${productData.sku} already exists, skipping`)
+            continue
+          }
+
+          const product = await payload.create({
+            collection: 'products',
+            data: {
+              ...productData,
+              tenant: autoShopTenantId,
+            },
+          })
+          results.push(`Created auto shop product: ${product.title}`)
+        }
+      }
+
+      return Response.json({ 
+        success: true, 
+        results,
+        tenants: createdTenants,
+      })
     } catch (error) {
       console.error('Seed error:', error)
       return Response.json(
