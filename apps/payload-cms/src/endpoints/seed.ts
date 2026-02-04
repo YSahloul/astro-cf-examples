@@ -217,6 +217,54 @@ export const seedEndpoint: Endpoint = {
         }
       }
 
+      // Create tenant users (one per tenant)
+      const tenantUsers = [
+        {
+          email: 'storefront@example.com',
+          password: 'Store123!',
+          name: 'Storefront Manager',
+          roles: ['customer'] as ('customer' | 'admin')[],
+          tenantSlug: 'storefront',
+        },
+        {
+          email: 'autoshop@example.com',
+          password: 'Auto123!',
+          name: 'Auto Shop Manager',
+          roles: ['customer'] as ('customer' | 'admin')[],
+          tenantSlug: 'auto-shop',
+        },
+      ]
+
+      for (const userData of tenantUsers) {
+        const existing = await payload.find({
+          collection: 'users',
+          where: { email: { equals: userData.email } },
+        })
+
+        if (existing.docs.length > 0) {
+          results.push(`User ${userData.email} already exists`)
+          continue
+        }
+
+        const tenantId = createdTenants[userData.tenantSlug]
+        if (!tenantId) {
+          results.push(`Tenant ${userData.tenantSlug} not found for user ${userData.email}`)
+          continue
+        }
+
+        await payload.create({
+          collection: 'users',
+          data: {
+            email: userData.email,
+            password: userData.password,
+            name: userData.name,
+            roles: userData.roles,
+            tenants: [{ tenant: tenantId }],
+          },
+        })
+        results.push(`Created user: ${userData.email} / ${userData.password} (tenant: ${userData.tenantSlug})`)
+      }
+
       // Delete incomplete products
       const existingProducts = await payload.find({
         collection: 'products',
