@@ -171,13 +171,14 @@ export const seedEndpoint: Endpoint = {
       }
 
       // Create or get admin user
-      const existingUsers = await payload.find({
+      const existingAdmin = await payload.find({
         collection: 'users',
+        where: { email: { equals: 'admin@example.com' } },
         limit: 1,
       })
 
       let adminUser: any
-      if (existingUsers.docs.length === 0) {
+      if (existingAdmin.docs.length === 0) {
         adminUser = await payload.create({
           collection: 'users',
           data: {
@@ -189,8 +190,15 @@ export const seedEndpoint: Endpoint = {
         })
         results.push('Created admin user: admin@example.com / Admin123!')
       } else {
-        adminUser = existingUsers.docs[0]
-        results.push('Admin user already exists')
+        // Reset admin password to ensure it works
+        adminUser = await payload.update({
+          collection: 'users',
+          id: existingAdmin.docs[0].id,
+          data: {
+            password: 'Admin123!',
+          },
+        })
+        results.push('Reset admin user password: admin@example.com / Admin123!')
       }
 
       // Create tenants

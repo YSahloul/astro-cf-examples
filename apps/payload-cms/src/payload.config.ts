@@ -13,6 +13,13 @@ import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Tenants } from './collections/Tenants'
+import { BusinessProfile } from './collections/BusinessProfile'
+import { BusinessHours } from './collections/BusinessHours'
+import { Services } from './collections/Services'
+import { Testimonials } from './collections/Testimonials'
+import { Leads } from './collections/Leads'
+import { Quotes } from './collections/Quotes'
+import { Agents } from './collections/Agents'
 import { seedEndpoint } from './endpoints/seed'
 import {
   isAdmin,
@@ -44,7 +51,18 @@ export default buildConfig({
     },
   },
   endpoints: [seedEndpoint],
-  collections: [Users, Media, Tenants],
+  collections: [
+    Users,
+    Media,
+    Tenants,
+    BusinessProfile,
+    BusinessHours,
+    Services,
+    Testimonials,
+    Leads,
+    Quotes,
+    Agents,
+  ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
@@ -167,14 +185,21 @@ export default buildConfig({
     multiTenantPlugin<Config>({
       // Collections that should be tenant-scoped
       collections: {
-        // Products are tenant-specific
+        // E-commerce
         products: {},
-        // Carts are tenant-specific
         carts: {},
-        // Orders are tenant-specific
         orders: {},
-        // Transactions are tenant-specific
         transactions: {},
+        // Business
+        'business-profiles': { isGlobal: true }, // One per tenant
+        'business-hours': {},
+        services: {},
+        testimonials: {},
+        // CRM
+        leads: {},
+        quotes: {},
+        // AI
+        agents: {},
       },
       // Super admins can access all tenants
       userHasAccessToAllTenants: (user) => {
