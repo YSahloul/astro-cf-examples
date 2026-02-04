@@ -7,6 +7,10 @@ export const Quotes: CollectionConfig = {
     defaultColumns: ['quoteId', 'lead', 'totalPrice', 'status', 'tenant', 'createdAt'],
     group: 'CRM',
   },
+  access: {
+    create: () => true, // Public create for quote generation
+    // read/update/delete require authentication (default)
+  },
   fields: [
     {
       name: 'quoteId',

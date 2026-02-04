@@ -7,6 +7,9 @@ export const Testimonials: CollectionConfig = {
     defaultColumns: ['name', 'rating', 'source', 'tenant', 'createdAt'],
     group: 'Business',
   },
+  access: {
+    read: () => true, // Public read for storefronts
+  },
   fields: [
     {
       name: 'name',

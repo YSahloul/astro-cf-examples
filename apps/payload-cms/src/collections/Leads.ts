@@ -7,6 +7,10 @@ export const Leads: CollectionConfig = {
     defaultColumns: ['name', 'email', 'status', 'source', 'tenant', 'createdAt'],
     group: 'CRM',
   },
+  access: {
+    create: () => true, // Public create for form submissions
+    // read/update/delete require authentication (default)
+  },
   fields: [
     {
       name: 'name',

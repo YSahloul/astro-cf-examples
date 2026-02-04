@@ -7,6 +7,9 @@ export const Services: CollectionConfig = {
     defaultColumns: ['name', 'price', 'featured', 'tenant', 'updatedAt'],
     group: 'Business',
   },
+  access: {
+    read: () => true, // Public read for storefronts
+  },
   fields: [
     {
       name: 'name',

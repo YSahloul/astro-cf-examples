@@ -7,6 +7,9 @@ export const BusinessProfile: CollectionConfig = {
     defaultColumns: ['name', 'tenant', 'phone', 'email', 'updatedAt'],
     group: 'Business',
   },
+  access: {
+    read: () => true, // Public read for storefronts
+  },
   fields: [
     {
       name: 'name',

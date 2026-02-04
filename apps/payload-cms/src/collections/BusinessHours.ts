@@ -7,6 +7,9 @@ export const BusinessHours: CollectionConfig = {
     defaultColumns: ['day', 'open', 'close', 'closed', 'tenant'],
     group: 'Business',
   },
+  access: {
+    read: () => true, // Public read for storefronts
+  },
   fields: [
     {
       name: 'day',
