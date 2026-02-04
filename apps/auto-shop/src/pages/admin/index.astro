@@ -1,21 +1,26 @@
 ---
 import { env } from "cloudflare:workers";
 import Layout from "@/layouts/Layout.astro";
-import { getDb, profile as profileTable, services as servicesTable, testimonials as testimonialsTable, leads as leadsTable } from "@/db";
+import { createContentClient, getProfile, getServices, getTestimonials, getLeads } from "@/lib/content";
 
-const db = getDb(env.DB);
+const client = createContentClient(env.PAYLOAD_CMS);
 
-const [profileResult, servicesResult, testimonialsResult, leadsResult] = await Promise.all([
-  db.select().from(profileTable).limit(1),
-  db.select().from(servicesTable),
-  db.select().from(testimonialsTable),
-  db.select().from(leadsTable),
+const [profileResult, services, testimonials, leads] = await Promise.all([
+  getProfile(client),
+  getServices(client),
+  getTestimonials(client),
+  getLeads(client),
 ]);
 
-const profile = profileResult[0] || { name: "Auto Shop" };
-const services = servicesResult;
-const testimonials = testimonialsResult;
-const leads = leadsResult;
+// Transform profile (flatten nested objects)
+const profile = profileResult ? {
+  name: profileResult.name,
+  phone: profileResult.phone,
+  email: profileResult.email,
+  address: profileResult.address?.street,
+  city: profileResult.address?.city,
+} : { name: "Auto Shop" };
+
 const newLeads = leads.filter(l => l.status === "new").length;
 ---
 

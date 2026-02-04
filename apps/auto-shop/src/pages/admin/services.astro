@@ -2,11 +2,10 @@
 import { env } from "cloudflare:workers";
 import Layout from "@/layouts/Layout.astro";
 import { ServicesManager } from "@/components/ServicesManager";
-import { getDb, services as servicesTable } from "@/db";
-import { asc, desc } from "drizzle-orm";
+import { createContentClient, getServices } from "@/lib/content";
 
-const db = getDb(env.DB);
-const services = await db.select().from(servicesTable).orderBy(desc(servicesTable.featured), asc(servicesTable.sortOrder));
+const client = createContentClient(env.PAYLOAD_CMS);
+const services = await getServices(client);
 ---
 
 <Layout title="Manage Services" isAdmin>

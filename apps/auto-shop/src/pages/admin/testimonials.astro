@@ -2,11 +2,10 @@
 import { env } from "cloudflare:workers";
 import Layout from "@/layouts/Layout.astro";
 import { TestimonialsManager } from "@/components/TestimonialsManager";
-import { getDb, testimonials as testimonialsTable } from "@/db";
-import { desc } from "drizzle-orm";
+import { createContentClient, getTestimonials } from "@/lib/content";
 
-const db = getDb(env.DB);
-const testimonials = await db.select().from(testimonialsTable).orderBy(desc(testimonialsTable.date));
+const client = createContentClient(env.PAYLOAD_CMS);
+const testimonials = await getTestimonials(client);
 ---
 
 <Layout title="Testimonials" isAdmin>

@@ -2,11 +2,28 @@
 import { env } from "cloudflare:workers";
 import Layout from "@/layouts/Layout.astro";
 import { ProfileForm } from "@/components/ProfileForm";
-import { getDb, profile as profileTable } from "@/db";
+import { createContentClient, getProfile } from "@/lib/content";
 
-const db = getDb(env.DB);
-const profileResult = await db.select().from(profileTable).limit(1);
-const profile = profileResult[0] || { name: "Auto Shop" };
+const client = createContentClient(env.PAYLOAD_CMS);
+const profileResult = await getProfile(client);
+
+// Transform profile for the form (flatten nested objects)
+const profile = profileResult ? {
+  id: profileResult.id,
+  name: profileResult.name,
+  tagline: profileResult.tagline,
+  description: profileResult.description,
+  phone: profileResult.phone,
+  email: profileResult.email,
+  address: profileResult.address?.street,
+  city: profileResult.address?.city,
+  state: profileResult.address?.state,
+  zip: profileResult.address?.zip,
+  heroImage: typeof profileResult.heroImage === 'object' ? profileResult.heroImage?.url : null,
+  instagram: profileResult.social?.instagram,
+  facebook: profileResult.social?.facebook,
+  financingUrl: profileResult.financingUrl,
+} : { name: "Auto Shop" };
 ---
 
 <Layout title="Edit Profile" isAdmin>

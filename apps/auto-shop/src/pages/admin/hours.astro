@@ -2,12 +2,19 @@
 import { env } from "cloudflare:workers";
 import Layout from "@/layouts/Layout.astro";
 import { HoursManager } from "@/components/HoursManager";
-import { getDb, hours as hoursTable } from "@/db";
+import { createContentClient, getHours } from "@/lib/content";
 
-const db = getDb(env.DB);
-const hoursResult = await db.select().from(hoursTable);
-const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const hours = hoursResult.sort((a, b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day));
+const client = createContentClient(env.PAYLOAD_CMS);
+const hoursResult = await getHours(client);
+
+// Transform hours for the component (capitalize day names)
+const hours = hoursResult.map(h => ({
+  id: h.id,
+  day: h.day.charAt(0).toUpperCase() + h.day.slice(1),
+  open: h.open || '08:00',
+  close: h.close || '18:00',
+  closed: h.closed || false,
+}));
 ---
 
 <Layout title="Business Hours" isAdmin>

@@ -1,6 +1,5 @@
 ---
 import { env } from "cloudflare:workers";
-import { asc, desc } from "drizzle-orm";
 import Layout from "@/layouts/Layout.astro";
 import Navbar from "@/components/Navbar.astro";
 import HeroSection from "@/components/HeroSection.astro";
@@ -13,30 +12,48 @@ import Footer from "@/components/Footer.astro";
 import FitmentRecommendations from "@/components/FitmentRecommendations";
 import { FitmentQuiz } from "@/components/FitmentQuiz";
 import { AppointmentScheduler } from "@/components/AppointmentScheduler";
-import { getDb, profile as profileTable, services as servicesTable, hours as hoursTable, testimonials as testimonialsTable, gallery as galleryTable } from "@/db";
+import { createContentClient, getProfile, getServices, getHours, getTestimonials } from "@/lib/content";
 
-const db = getDb(env.DB);
+const client = createContentClient(env.PAYLOAD_CMS);
 
-const [profileResult, servicesResult, hoursResult, testimonialsResult, galleryResult] = await Promise.all([
-  db.select().from(profileTable).limit(1),
-  db.select().from(servicesTable).orderBy(desc(servicesTable.featured), asc(servicesTable.sortOrder)),
-  db.select().from(hoursTable),
-  db.select().from(testimonialsTable).orderBy(desc(testimonialsTable.date)),
-  db.select().from(galleryTable).orderBy(asc(galleryTable.sortOrder)),
+const [profile, services, hours, testimonials] = await Promise.all([
+  getProfile(client),
+  getServices(client),
+  getHours(client),
+  getTestimonials(client),
 ]);
 
-const profile = profileResult[0] || { name: "Auto Shop" };
-const services = servicesResult;
-const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const hours = hoursResult.sort((a, b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day));
-const testimonials = testimonialsResult;
-const gallery = galleryResult;
+// Transform profile for components (flatten nested objects)
+const profileData = profile ? {
+  name: profile.name,
+  tagline: profile.tagline,
+  description: profile.description,
+  phone: profile.phone,
+  email: profile.email,
+  address: profile.address?.street,
+  city: profile.address?.city,
+  state: profile.address?.state,
+  zip: profile.address?.zip,
+  instagram: profile.social?.instagram,
+  facebook: profile.social?.facebook,
+  financingUrl: profile.financingUrl,
+  heroImage: typeof profile.heroImage === 'object' ? profile.heroImage?.url : null,
+} : { name: "Auto Shop" };
+
+// Transform hours for components (capitalize day names)
+const hoursData = hours.map(h => ({
+  ...h,
+  day: h.day.charAt(0).toUpperCase() + h.day.slice(1),
+}));
+
+// Gallery not yet migrated to Payload - use empty array for now
+const gallery: any[] = [];
 ---
 
-<Layout title={profile.name}>
-  <Navbar name={profile.name} phone={profile.phone} />
+<Layout title={profileData.name}>
+  <Navbar name={profileData.name} phone={profileData.phone} />
 
-  <HeroSection profile={profile} />
+  <HeroSection profile={profileData} />
   
   <FitmentRecommendations client:load />
   
@@ -46,26 +63,26 @@ const gallery = galleryResult;
 
   <section id="services" class="bg-base-200 py-16 md:py-24">
     <div class="max-w-5xl mx-auto px-4">
-      <AppointmentScheduler client:load services={services.map((s: any) => ({ id: s.id, name: s.name }))} />
+      <AppointmentScheduler client:load services={services.map((s) => ({ id: s.id, name: s.name }))} />
     </div>
   </section>
 
-  <GallerySection gallery={gallery} instagram={profile.instagram} />
+  <GallerySection gallery={gallery} instagram={profileData.instagram} />
 
-  <HoursSection hours={hours} profile={profile} />
+  <HoursSection hours={hoursData} profile={profileData} />
 
   <TestimonialsSection testimonials={testimonials} />
 
-  <CtaSection phone={profile.phone} />
+  <CtaSection phone={profileData.phone} />
 
   <Footer 
-    name={profile.name} 
-    phone={profile.phone}
-    address={profile.address}
-    city={profile.city}
-    state={profile.state}
-    zip={profile.zip}
-    instagram={profile.instagram}
-    facebook={profile.facebook}
+    name={profileData.name} 
+    phone={profileData.phone}
+    address={profileData.address}
+    city={profileData.city}
+    state={profileData.state}
+    zip={profileData.zip}
+    instagram={profileData.instagram}
+    facebook={profileData.facebook}
   />
 </Layout>

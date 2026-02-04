@@ -2,11 +2,8 @@
 /// <reference types="astro/client" />
 /// <reference types="@cloudflare/workers-types" />
 
-// Extend the Cloudflare Env interface with our additional bindings
 interface Env {
-  // Database (legacy - migrating to Payload CMS)
-  DB: D1Database;
-  // Fitment database (separate from main app data)
+  // Fitment database (external wheel/tire fitment data)
   FITMENT_DB: D1Database;
   // KV for sessions
   SESSION: KVNamespace;
@@ -22,7 +19,6 @@ interface Env {
   GOOGLE_AI_STUDIO_API_KEY?: string;
 }
 
-// Augment the cloudflare:workers module to use our Env interface
 declare module "cloudflare:workers" {
   const env: Env;
 }
