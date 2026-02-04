@@ -19,22 +19,9 @@ export const Tenants: CollectionConfig = {
     description: 'Manage your store tenants. Each tenant has its own products, carts, and orders.',
   },
   access: {
-    // Only admins can manage tenants
-    read: ({ req: { user } }) => {
-      if (!user) return false
-      // Admins can read all tenants
-      if (user.roles?.includes('admin')) return true
-      // Regular users can only see tenants they belong to
-      // The multi-tenant plugin adds a 'tenants' array field to users
-      const userWithTenants = user as typeof user & { tenants?: Array<{ tenant: number | { id: number } }> }
-      const userTenants = userWithTenants.tenants?.map((t) => 
-        typeof t.tenant === 'number' ? t.tenant : t.tenant?.id
-      ).filter(Boolean)
-      if (userTenants?.length) {
-        return { id: { in: userTenants } }
-      }
-      return false
-    },
+    // Public read - storefronts need to resolve tenant by slug/domain
+    read: () => true,
+    // Only admins can create/update/delete tenants
     create: ({ req: { user } }) => user?.roles?.includes('admin') ?? false,
     update: ({ req: { user } }) => user?.roles?.includes('admin') ?? false,
     delete: ({ req: { user } }) => user?.roles?.includes('admin') ?? false,
