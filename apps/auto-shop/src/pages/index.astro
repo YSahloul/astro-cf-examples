@@ -1,5 +1,4 @@
 ---
-import { env } from "cloudflare:workers";
 import Layout from "@/layouts/Layout.astro";
 import Navbar from "@/components/Navbar.astro";
 import HeroSection from "@/components/HeroSection.astro";
@@ -12,48 +11,22 @@ import Footer from "@/components/Footer.astro";
 import FitmentRecommendations from "@/components/FitmentRecommendations";
 import { FitmentQuiz } from "@/components/FitmentQuiz";
 import { AppointmentScheduler } from "@/components/AppointmentScheduler";
-import { createContentClient, getProfile, getServices, getHours, getTestimonials } from "@/lib/content";
+import { siteConfig } from "@/config/site";
 
-const client = createContentClient(env.PAYLOAD_CMS);
+// Static config - no CMS fetch needed
+const profile = siteConfig;
+const hours = siteConfig.hours;
+const services = siteConfig.services;
+const testimonials = siteConfig.testimonials;
 
-const [profile, services, hours, testimonials] = await Promise.all([
-  getProfile(client),
-  getServices(client),
-  getHours(client),
-  getTestimonials(client),
-]);
-
-// Transform profile for components (flatten nested objects)
-const profileData = profile ? {
-  name: profile.name,
-  tagline: profile.tagline,
-  description: profile.description,
-  phone: profile.phone,
-  email: profile.email,
-  address: profile.address?.street,
-  city: profile.address?.city,
-  state: profile.address?.state,
-  zip: profile.address?.zip,
-  instagram: profile.social?.instagram,
-  facebook: profile.social?.facebook,
-  financingUrl: profile.financingUrl,
-  heroImage: typeof profile.heroImage === 'object' ? profile.heroImage?.url : null,
-} : { name: "Auto Shop" };
-
-// Transform hours for components (capitalize day names)
-const hoursData = hours.map(h => ({
-  ...h,
-  day: h.day.charAt(0).toUpperCase() + h.day.slice(1),
-}));
-
-// Gallery not yet migrated to Payload - use empty array for now
+// Gallery images (static)
 const gallery: any[] = [];
 ---
 
-<Layout title={profileData.name}>
-  <Navbar name={profileData.name} phone={profileData.phone} />
+<Layout title={profile.name}>
+  <Navbar name={profile.name} phone={profile.phone} />
 
-  <HeroSection profile={profileData} />
+  <HeroSection profile={profile} />
   
   <FitmentRecommendations client:load />
   
@@ -67,22 +40,22 @@ const gallery: any[] = [];
     </div>
   </section>
 
-  <GallerySection gallery={gallery} instagram={profileData.instagram} />
+  <GallerySection gallery={gallery} instagram={profile.instagram} />
 
-  <HoursSection hours={hoursData} profile={profileData} />
+  <HoursSection hours={hours} profile={profile} />
 
   <TestimonialsSection testimonials={testimonials} />
 
-  <CtaSection phone={profileData.phone} />
+  <CtaSection phone={profile.phone} />
 
   <Footer 
-    name={profileData.name} 
-    phone={profileData.phone}
-    address={profileData.address}
-    city={profileData.city}
-    state={profileData.state}
-    zip={profileData.zip}
-    instagram={profileData.instagram}
-    facebook={profileData.facebook}
+    name={profile.name} 
+    phone={profile.phone}
+    address={profile.address}
+    city={profile.city}
+    state={profile.state}
+    zip={profile.zip}
+    instagram={profile.instagram}
+    facebook={profile.facebook}
   />
 </Layout>
